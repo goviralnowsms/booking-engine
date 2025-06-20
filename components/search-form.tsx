@@ -50,19 +50,15 @@ export function SearchForm({ onSearch }: SearchFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!country || !destination || !tourLevel || !startDate || !endDate) {
-      alert("Please fill in all required fields")
-      return
-    }
-
+    // No validation required - allow empty search
     onSearch({
-      country,
-      destination,
-      tourLevel,
-      startDate: format(startDate, "yyyy-MM-dd"),
-      endDate: format(endDate, "yyyy-MM-dd"),
-      adults,
-      children,
+      country: country || undefined,
+      destination: destination || undefined,
+      tourLevel: tourLevel || undefined,
+      startDate: startDate ? format(startDate, "yyyy-MM-dd") : undefined,
+      endDate: endDate ? format(endDate, "yyyy-MM-dd") : undefined,
+      adults: adults || 2,
+      children: children || 0,
     })
   }
 
@@ -70,7 +66,9 @@ export function SearchForm({ onSearch }: SearchFormProps) {
     <div className="max-w-4xl mx-auto">
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">Discover Your African Adventure</h1>
-        <p className="text-xl text-gray-600">Search and book authentic African tours with real-time availability</p>
+        <p className="text-xl text-gray-600">
+          Search and book authentic African tours - leave fields blank to see all available tours
+        </p>
       </div>
 
       <Card>
@@ -79,13 +77,13 @@ export function SearchForm({ onSearch }: SearchFormProps) {
             <Search className="w-5 h-5" />
             Search Tours
           </CardTitle>
-          <CardDescription>Find the perfect African adventure for your travel dates</CardDescription>
+          <CardDescription>Find the perfect African adventure - all fields are optional</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="country">Country *</Label>
+                <Label htmlFor="country">Country</Label>
                 <Select
                   value={country}
                   onValueChange={(value) => {
@@ -94,7 +92,7 @@ export function SearchForm({ onSearch }: SearchFormProps) {
                   }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a country" />
+                    <SelectValue placeholder="Any country" />
                   </SelectTrigger>
                   <SelectContent>
                     {countries.map((c) => (
@@ -107,10 +105,10 @@ export function SearchForm({ onSearch }: SearchFormProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="destination">Destination *</Label>
+                <Label htmlFor="destination">Destination</Label>
                 <Select value={destination} onValueChange={setDestination} disabled={!country}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a destination" />
+                    <SelectValue placeholder="Any destination" />
                   </SelectTrigger>
                   <SelectContent>
                     {country &&
@@ -125,10 +123,10 @@ export function SearchForm({ onSearch }: SearchFormProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="tourLevel">Tour Level *</Label>
+              <Label htmlFor="tourLevel">Tour Level</Label>
               <Select value={tourLevel} onValueChange={setTourLevel}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select tour level" />
+                  <SelectValue placeholder="Any tour level" />
                 </SelectTrigger>
                 <SelectContent>
                   {tourLevels.map((level) => (
@@ -142,12 +140,12 @@ export function SearchForm({ onSearch }: SearchFormProps) {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Start Date *</Label>
+                <Label>Start Date</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full justify-start text-left font-normal">
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {startDate ? format(startDate, "PPP") : "Pick a date"}
+                      {startDate ? format(startDate, "PPP") : "Any start date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
@@ -163,12 +161,12 @@ export function SearchForm({ onSearch }: SearchFormProps) {
               </div>
 
               <div className="space-y-2">
-                <Label>End Date *</Label>
+                <Label>End Date</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full justify-start text-left font-normal">
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {endDate ? format(endDate, "PPP") : "Pick a date"}
+                      {endDate ? format(endDate, "PPP") : "Any end date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">

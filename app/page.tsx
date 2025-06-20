@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { SearchForm } from "@/components/search-form"
 import { TourResults } from "@/components/tour-results"
 import { BookingForm } from "@/components/booking-form"
@@ -9,16 +9,19 @@ import { BookingConfirmation } from "@/components/booking-confirmation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 
+// Add this import at the top
+import { createClient } from "@supabase/supabase-js"
+
 export type BookingStep = "search" | "results" | "booking" | "payment" | "confirmation"
 
 export interface SearchCriteria {
-  country: string
-  destination: string
-  tourLevel: string
-  startDate: string
-  endDate: string
-  adults: number
-  children: number
+  country?: string
+  destination?: string
+  tourLevel?: string
+  startDate?: string
+  endDate?: string
+  adults?: number
+  children?: number
 }
 
 export interface Tour {
@@ -63,6 +66,30 @@ export default function BookingEngine() {
   const [bookingData, setBookingData] = useState<BookingData | null>(null)
   const [bookingReference, setBookingReference] = useState<string>("")
 
+  // Add this inside the BookingEngine component, right after the state declarations:
+  const [dbStatus, setDbStatus] = useState<string>("Checking database...")
+
+  // Add this useEffect to test the database connection
+  useEffect(() => {
+    const testDatabase = async () => {
+      try {
+        const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+
+        const { data, error } = await supabase.from("customers").select("count").limit(1)
+
+        if (error) {
+          setDbStatus(`Database Error: ${error.message}`)
+        } else {
+          setDbStatus("✅ Database Connected Successfully")
+        }
+      } catch (err) {
+        setDbStatus(`Connection Error: ${err instanceof Error ? err.message : "Unknown error"}`)
+      }
+    }
+
+    testDatabase()
+  }, [])
+
   const handleSearch = (criteria: SearchCriteria) => {
     setSearchCriteria(criteria)
     setCurrentStep("results")
@@ -94,6 +121,11 @@ export default function BookingEngine() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
+
+      {/* Add this right after the Header component in the JSX: */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+        <p className="text-sm text-blue-800">{dbStatus}</p>
+      </div>
 
       <main className="container mx-auto px-4 py-8">
         {currentStep === "search" && <SearchForm onSearch={handleSearch} />}
