@@ -1,4 +1,3 @@
 {
-  // run pnpm without the frozen-lockfile flag so the lockfile can be regenerated
   "installCommand": "pnpm install --no-frozen-lockfile"
 }

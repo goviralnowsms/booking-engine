@@ -8,8 +8,6 @@ import { PaymentForm } from "@/components/payment-form"
 import { BookingConfirmation } from "@/components/booking-confirmation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-
-// Add this import at the top
 import { createClient } from "@supabase/supabase-js"
 
 export type BookingStep = "search" | "results" | "booking" | "payment" | "confirmation"
@@ -65,25 +63,30 @@ export default function BookingEngine() {
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null)
   const [bookingData, setBookingData] = useState<BookingData | null>(null)
   const [bookingReference, setBookingReference] = useState<string>("")
-
-  // Add this inside the BookingEngine component, right after the state declarations:
   const [dbStatus, setDbStatus] = useState<string>("Checking database...")
 
-  // Add this useEffect to test the database connection
   useEffect(() => {
     const testDatabase = async () => {
       try {
-        const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+        // Check if environment variables exist
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
+        if (!supabaseUrl || !supabaseKey) {
+          setDbStatus("❌ Supabase environment variables not found")
+          return
+        }
+
+        const supabase = createClient(supabaseUrl, supabaseKey)
         const { data, error } = await supabase.from("customers").select("count").limit(1)
 
         if (error) {
-          setDbStatus(`Database Error: ${error.message}`)
+          setDbStatus(`❌ Database Error: ${error.message}`)
         } else {
           setDbStatus("✅ Database Connected Successfully")
         }
       } catch (err) {
-        setDbStatus(`Connection Error: ${err instanceof Error ? err.message : "Unknown error"}`)
+        setDbStatus(`❌ Connection Error: ${err instanceof Error ? err.message : "Unknown error"}`)
       }
     }
 
@@ -122,9 +125,10 @@ export default function BookingEngine() {
     <div className="min-h-screen bg-gray-50">
       <Header />
 
-      {/* Add this right after the Header component in the JSX: */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-        <p className="text-sm text-blue-800">{dbStatus}</p>
+      <div className="container mx-auto px-4 py-2">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+          <p className="text-sm text-blue-800">{dbStatus}</p>
+        </div>
       </div>
 
       <main className="container mx-auto px-4 py-8">
@@ -141,7 +145,7 @@ export default function BookingEngine() {
         {currentStep === "booking" && selectedTour && (
           <BookingForm
             tour={selectedTour}
-            searchCriteria={searchCriteria!}
+            searchCriteria={searchCriteria}
             onSubmit={handleBookingSubmit}
             onBack={() => setCurrentStep("results")}
           />
