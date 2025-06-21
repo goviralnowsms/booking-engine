@@ -1,26 +1,42 @@
 import { Redis } from "@upstash/redis"
 
-const redis = new Redis({
-  url: process.env.KV_REST_API_URL || "",
-  token: process.env.KV_REST_API_TOKEN || "",
-})
+const hasRedisCreds = Boolean(process.env.KV_REST_API_URL) && Boolean(process.env.KV_REST_API_TOKEN)
+
+let redis: Redis | null = null
+if (hasRedisCreds) {
+  redis = new Redis({
+    url: process.env.KV_REST_API_URL!,
+    token: process.env.KV_REST_API_TOKEN!,
+  })
+} else {
+  console.warn("[CacheManager] Upstash credentials missing – caching disabled (using in-memory Map instead)")
+}
+
+const memoryStore = new Map<string, unknown>()
 
 export class CacheManager {
   static async get<T>(key: string): Promise<T | null> {
     try {
-      const data = await redis.get(key)
-      return data as T | null
+      if (!hasRedisCreds) {
+        return (memoryStore.get(key) as T) ?? null
+      }
+      const data = await redis!.get(key)
+      return (data as T) ?? null
     } catch (error) {
-      console.error(`Failed to get data from cache for key ${key}:`, error)
+      console.error(`Failed to get cache key "${key}":`, error)
       return null
     }
   }
 
   static async set<T>(key: string, data: T, expiry: number): Promise<void> {
     try {
-      await redis.set(key, data, { ex: expiry })
+      if (!hasRedisCreds) {
+        memoryStore.set(key, data)
+        return
+      }
+      await redis!.set(key, data, { ex: expiry })
     } catch (error) {
-      console.error(`Failed to set data in cache for key ${key}:`, error)
+      console.error(`Failed to set cache key "${key}":`, error)
     }
   }
 
