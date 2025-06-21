@@ -50,7 +50,6 @@ export function SearchForm({ onSearch }: SearchFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    // No validation required - allow empty search
     onSearch({
       country: country || undefined,
       destination: destination || undefined,

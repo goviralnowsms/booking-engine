@@ -32,10 +32,8 @@ export function PaymentForm({ bookingData, onPaymentComplete, onBack }: PaymentF
     e.preventDefault()
     setProcessing(true)
 
-    // Simulate payment processing
     await new Promise((resolve) => setTimeout(resolve, 2000))
 
-    // Generate booking reference
     const reference = `TIA${Date.now().toString().slice(-6)}`
 
     setProcessing(false)
