@@ -292,7 +292,10 @@ export default function BookingEngine() {
 // Simple Search Form Component
 function SearchForm({ onSearch }: { onSearch: (criteria: SearchCriteria) => void }) {
   const [country, setCountry] = useState("")
+  const [destination, setDestination] = useState("")
   const [tourLevel, setTourLevel] = useState("")
+  const [startDate, setStartDate] = useState("")
+  const [endDate, setEndDate] = useState("")
   const [adults, setAdults] = useState(2)
   const [children, setChildren] = useState(0)
 
@@ -300,7 +303,10 @@ function SearchForm({ onSearch }: { onSearch: (criteria: SearchCriteria) => void
     e.preventDefault()
     onSearch({
       country: country || undefined,
+      destination: destination || undefined,
       tourLevel: tourLevel || undefined,
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
       adults: adults || 2,
       children: children || 0,
     })
@@ -322,7 +328,7 @@ function SearchForm({ onSearch }: { onSearch: (criteria: SearchCriteria) => void
               <select
                 value={country}
                 onChange={(e) => setCountry(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               >
                 <option value="">Any country</option>
                 <option value="South Africa">South Africa</option>
@@ -336,18 +342,53 @@ function SearchForm({ onSearch }: { onSearch: (criteria: SearchCriteria) => void
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tour Level</label>
-              <select
-                value={tourLevel}
-                onChange={(e) => setTourLevel(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md"
-              >
-                <option value="">Any level</option>
-                <option value="basic">Basic - Budget Friendly</option>
-                <option value="standard">Standard - Comfortable</option>
-                <option value="luxury">Luxury - Premium Experience</option>
-              </select>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Destination</label>
+              <input
+                type="text"
+                value={destination}
+                onChange={(e) => setDestination(e.target.value)}
+                placeholder="e.g. Kruger, Serengeti, Cape Town"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              />
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                min={new Date().toISOString().split("T")[0]}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                min={startDate || new Date().toISOString().split("T")[0]}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tour Level</label>
+            <select
+              value={tourLevel}
+              onChange={(e) => setTourLevel(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+            >
+              <option value="">Any level</option>
+              <option value="basic">Basic - Budget Friendly</option>
+              <option value="standard">Standard - Comfortable</option>
+              <option value="luxury">Luxury - Premium Experience</option>
+            </select>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -359,7 +400,7 @@ function SearchForm({ onSearch }: { onSearch: (criteria: SearchCriteria) => void
                 max="10"
                 value={adults}
                 onChange={(e) => setAdults(Number(e.target.value) || 1)}
-                className="w-full p-2 border border-gray-300 rounded-md"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               />
             </div>
 
@@ -371,14 +412,14 @@ function SearchForm({ onSearch }: { onSearch: (criteria: SearchCriteria) => void
                 max="10"
                 value={children}
                 onChange={(e) => setChildren(Number(e.target.value) || 0)}
-                className="w-full p-2 border border-gray-300 rounded-md"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               />
             </div>
           </div>
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors"
+            className="w-full bg-orange-500 text-white py-3 px-4 rounded-md hover:bg-orange-600 transition-colors font-medium"
           >
             🔍 Search Tours
           </button>
@@ -479,7 +520,7 @@ function TourResults({
                     className={`px-6 py-2 rounded-md ${
                       tour.availability === "NO"
                         ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                        : "bg-blue-600 text-white hover:bg-blue-700"
+                        : "bg-orange-500 text-white hover:bg-orange-600"
                     }`}
                   >
                     {tour.availability === "NO" ? "Not Available" : "Select Tour"}
