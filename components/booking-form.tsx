@@ -33,22 +33,24 @@ export function BookingForm({ tour, searchCriteria, onSubmit, onBack }: BookingF
   })
 
   const handleExtraToggle = (extraId: string, isCompulsory: boolean) => {
-    if (isCompulsory) return // Can't toggle compulsory extras
+    if (isCompulsory) return
 
     setSelectedExtras((prev) => (prev.includes(extraId) ? prev.filter((id) => id !== extraId) : [...prev, extraId]))
   }
 
   const calculateTotal = () => {
-    const basePrice = tour.price * (searchCriteria.adults + searchCriteria.children)
+    const adults = searchCriteria.adults || 2
+    const children = searchCriteria.children || 0
+    const basePrice = tour.price * (adults + children)
     const extrasPrice = selectedExtras.reduce((total, extraId) => {
       const extra = tour.extras.find((e) => e.id === extraId)
-      return total + (extra ? extra.price * (searchCriteria.adults + searchCriteria.children) : 0)
+      return total + (extra ? extra.price * (adults + children) : 0)
     }, 0)
     return basePrice + extrasPrice
   }
 
   const totalPrice = calculateTotal()
-  const depositAmount = Math.round(totalPrice * 0.3) // 30% deposit
+  const depositAmount = Math.round(totalPrice * 0.3)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -68,6 +70,9 @@ export function BookingForm({ tour, searchCriteria, onSubmit, onBack }: BookingF
 
     onSubmit(bookingData)
   }
+
+  const adults = searchCriteria.adults || 2
+  const children = searchCriteria.children || 0
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -102,7 +107,7 @@ export function BookingForm({ tour, searchCriteria, onSubmit, onBack }: BookingF
                   </div>
                   <div className="flex items-center">
                     <Users className="w-4 h-4 mr-1" />
-                    {searchCriteria.adults} adults, {searchCriteria.children} children
+                    {adults} adults, {children} children
                   </div>
                 </div>
               </div>
@@ -243,8 +248,8 @@ export function BookingForm({ tour, searchCriteria, onSubmit, onBack }: BookingF
 
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span>Base price ({searchCriteria.adults + searchCriteria.children} people)</span>
-                  <span>${tour.price * (searchCriteria.adults + searchCriteria.children)}</span>
+                  <span>Base price ({adults + children} people)</span>
+                  <span>${tour.price * (adults + children)}</span>
                 </div>
 
                 {selectedExtras.map((extraId) => {
@@ -253,7 +258,7 @@ export function BookingForm({ tour, searchCriteria, onSubmit, onBack }: BookingF
                   return (
                     <div key={extraId} className="flex justify-between text-sm">
                       <span>{extra.name}</span>
-                      <span>+${extra.price * (searchCriteria.adults + searchCriteria.children)}</span>
+                      <span>+${extra.price * (adults + children)}</span>
                     </div>
                   )
                 })}

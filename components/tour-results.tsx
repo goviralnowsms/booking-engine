@@ -14,107 +14,36 @@ interface TourResultsProps {
   onBackToSearch: () => void
 }
 
-// Mock data - in real implementation, this would come from Tourplan API
-const mockTours: Tour[] = [
-  {
-    id: "SAFKRUGER001",
-    name: "Kruger National Park Safari",
-    description:
-      "Experience the Big Five in South Africa's premier game reserve. Includes game drives, accommodation, and meals.",
-    duration: 3,
-    price: 1250,
-    level: "standard",
-    availability: "OK",
-    supplier: "African Safari Co",
-    location: "Kruger National Park",
-    extras: [
-      { id: "EXT001", name: "Bush Walk", description: "Guided walking safari", price: 150, isCompulsory: false },
-      { id: "EXT002", name: "Night Drive", description: "Evening game drive", price: 200, isCompulsory: false },
-    ],
-  },
-  {
-    id: "KENMARA001",
-    name: "Masai Mara Great Migration",
-    description: "Witness the spectacular wildebeest migration in Kenya's most famous reserve.",
-    duration: 4,
-    price: 2100,
-    level: "luxury",
-    availability: "OK",
-    supplier: "Kenya Wildlife Tours",
-    location: "Masai Mara",
-    extras: [
-      { id: "EXT003", name: "Hot Air Balloon", description: "Sunrise balloon safari", price: 450, isCompulsory: false },
-      {
-        id: "EXT004",
-        name: "Masai Village Visit",
-        description: "Cultural experience",
-        price: 100,
-        isCompulsory: false,
-      },
-    ],
-  },
-  {
-    id: "UGABWINDI001",
-    name: "Gorilla Trekking Adventure",
-    description: "Track mountain gorillas in Bwindi Impenetrable Forest. Permits included.",
-    duration: 2,
-    price: 1800,
-    level: "standard",
-    availability: "RQ",
-    supplier: "Uganda Gorilla Tours",
-    location: "Bwindi",
-    extras: [
-      {
-        id: "EXT005",
-        name: "Gorilla Permit",
-        description: "Required gorilla tracking permit",
-        price: 700,
-        isCompulsory: true,
-      },
-      { id: "EXT006", name: "Porter Service", description: "Assistance during trek", price: 50, isCompulsory: false },
-    ],
-  },
-]
-
 export function TourResults({ searchCriteria, onTourSelect, onBackToSearch }: TourResultsProps) {
   const [tours, setTours] = useState<Tour[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Simulate API call to Tourplan
     const fetchTours = async () => {
       setLoading(true)
 
-      // Simulate network delay
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      try {
+        const response = await fetch("/api/tours/search", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(searchCriteria),
+        })
 
-      // Apply filters only if they are specified
-      let filteredTours = [...mockTours]
+        if (!response.ok) {
+          throw new Error("Failed to fetch tours")
+        }
 
-      // Filter by tour level if specified
-      if (searchCriteria.tourLevel) {
-        filteredTours = filteredTours.filter((tour) => tour.level === searchCriteria.tourLevel)
+        const data = await response.json()
+        setTours(data.tours || [])
+      } catch (error) {
+        console.error("Failed to fetch tours:", error)
+        setTours([])
+        // You could show an error message to the user here
+      } finally {
+        setLoading(false)
       }
-
-      // Filter by country if specified - this would be integrated with the location field in a real implementation
-      if (searchCriteria.country) {
-        // This is a simplified example - in a real implementation, you'd need to match the country with locations
-        filteredTours = filteredTours.filter((tour) =>
-          tour.location.toLowerCase().includes(searchCriteria.country.toLowerCase())
-        )
-      }
-
-      // Filter by destination if specified
-      if (searchCriteria.destination) {
-        filteredTours = filteredTours.filter((tour) =>
-          tour.location.toLowerCase().includes(searchCriteria.destination.toLowerCase())
-        )
-      }
-
-      // Additional date filters would be applied here in a real implementation
-
-      setTours(filteredTours)
-      setLoading(false)
     }
 
     fetchTours()
