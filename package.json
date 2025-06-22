@@ -10,10 +10,11 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "latest",
-    "@radix-ui/react-checkbox": "^1.0.4",
-    "@radix-ui/react-label": "^2.0.2",
+    "@radix-ui/react-checkbox": "latest",
+    "@radix-ui/react-label": "latest",
     "@radix-ui/react-popover": "^1.0.7",
     "@radix-ui/react-select": "^2.0.0",
+    "@radix-ui/react-separator": "latest",
     "@radix-ui/react-slot": "latest",
     "@supabase/supabase-js": "latest",
     "@upstash/redis": "latest",

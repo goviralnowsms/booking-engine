@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 
 export type BookingStep = "search" | "results" | "booking" | "payment" | "confirmation"
@@ -167,7 +166,7 @@ export default function BookingEngine() {
         )}
 
         {currentStep === "booking" && selectedTour && searchCriteria && (
-          <BookingForm
+          <SimpleBookingForm
             tour={selectedTour}
             searchCriteria={searchCriteria}
             onSubmit={handleBookingSubmit}
@@ -176,7 +175,7 @@ export default function BookingEngine() {
         )}
 
         {currentStep === "payment" && bookingData && (
-          <PaymentForm
+          <SimplePaymentForm
             bookingData={bookingData}
             onPaymentComplete={handlePaymentComplete}
             onBack={() => setCurrentStep("booking")}
@@ -451,8 +450,8 @@ function TourResults({
   )
 }
 
-// Placeholder components for other steps
-function BookingForm({ tour, searchCriteria, onSubmit, onBack }: any) {
+// Simplified components for other steps
+function SimpleBookingForm({ tour, searchCriteria, onSubmit, onBack }: any) {
   return (
     <div className="max-w-4xl mx-auto">
       <button onClick={onBack} className="mb-6 px-4 py-2 border border-gray-300 rounded-md">
@@ -486,7 +485,7 @@ function BookingForm({ tour, searchCriteria, onSubmit, onBack }: any) {
   )
 }
 
-function PaymentForm({ bookingData, onPaymentComplete, onBack }: any) {
+function SimplePaymentForm({ bookingData, onPaymentComplete, onBack }: any) {
   return (
     <div className="max-w-4xl mx-auto">
       <button onClick={onBack} className="mb-6 px-4 py-2 border border-gray-300 rounded-md">
