@@ -3,7 +3,6 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { createClient } from "@supabase/supabase-js"
 
 export type BookingStep = "search" | "results" | "booking" | "payment" | "confirmation"
 
@@ -65,22 +64,9 @@ export default function BookingEngine() {
   useEffect(() => {
     const testDatabase = async () => {
       try {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-        if (!supabaseUrl || !supabaseKey) {
-          setDbStatus("❌ Supabase environment variables not found")
-          return
-        }
-
-        const supabase = createClient(supabaseUrl, supabaseKey)
-        const { data, error } = await supabase.from("customers").select("count").limit(1)
-
-        if (error) {
-          setDbStatus(`❌ Database Error: ${error.message}`)
-        } else {
-          setDbStatus("✅ Database Connected Successfully")
-        }
+        const response = await fetch("/api/test-db")
+        const result = await response.json()
+        setDbStatus(result.status)
       } catch (err) {
         setDbStatus(`❌ Connection Error: ${err instanceof Error ? err.message : "Unknown error"}`)
       }
@@ -93,101 +79,28 @@ export default function BookingEngine() {
     setLoading(true)
     setSearchCriteria(criteria)
 
-    // Mock tours data
-    const mockTours: Tour[] = [
-      {
-        id: "tour-001",
-        name: "Kruger National Park Safari",
-        description:
-          "Experience the Big Five in South Africa's premier game reserve. This 3-day safari includes game drives, accommodation, and all meals.",
-        duration: 3,
-        price: 1200,
-        level: "standard",
-        availability: "OK",
-        supplier: "African Safari Co",
-        location: "Kruger National Park, South Africa",
-        extras: [
-          {
-            id: "extra-001",
-            name: "Bush Walk",
-            description: "Guided walking safari with experienced ranger",
-            price: 150,
-            isCompulsory: false,
-          },
-          {
-            id: "extra-002",
-            name: "Park Fees",
-            description: "Conservation fees (required)",
-            price: 50,
-            isCompulsory: true,
-          },
-        ],
-      },
-      {
-        id: "tour-002",
-        name: "Serengeti Migration Experience",
-        description: "Witness the Great Migration in Tanzania's Serengeti. 5-day luxury safari with premium lodges.",
-        duration: 5,
-        price: 2800,
-        level: "luxury",
-        availability: "OK",
-        supplier: "Tanzania Adventures",
-        location: "Serengeti, Tanzania",
-        extras: [
-          {
-            id: "extra-003",
-            name: "Hot Air Balloon",
-            description: "Sunrise balloon safari over the Serengeti",
-            price: 450,
-            isCompulsory: false,
-          },
-        ],
-      },
-      {
-        id: "tour-003",
-        name: "Gorilla Trekking Rwanda",
-        description:
-          "Once-in-a-lifetime mountain gorilla encounter in Volcanoes National Park. Includes permits and accommodation.",
-        duration: 2,
-        price: 1800,
-        level: "standard",
-        availability: "RQ",
-        supplier: "Rwanda Eco Tours",
-        location: "Volcanoes National Park, Rwanda",
-        extras: [
-          {
-            id: "extra-004",
-            name: "Gorilla Permit",
-            description: "Required permit for gorilla trekking",
-            price: 700,
-            isCompulsory: true,
-          },
-        ],
-      },
-    ]
+    try {
+      const response = await fetch("/api/tours/search", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(criteria),
+      })
 
-    // Filter tours based on criteria
-    let filteredTours = mockTours
+      if (!response.ok) {
+        throw new Error("Failed to fetch tours")
+      }
 
-    if (criteria.country) {
-      filteredTours = filteredTours.filter((tour) =>
-        tour.location.toLowerCase().includes(criteria.country!.toLowerCase()),
-      )
+      const data = await response.json()
+      setTours(data.tours || [])
+    } catch (error) {
+      console.error("Failed to fetch tours:", error)
+      setTours([])
+    } finally {
+      setLoading(false)
+      setCurrentStep("results")
     }
-
-    if (criteria.destination) {
-      filteredTours = filteredTours.filter((tour) =>
-        tour.location.toLowerCase().includes(criteria.destination!.toLowerCase()),
-      )
-    }
-
-    if (criteria.tourLevel) {
-      filteredTours = filteredTours.filter((tour) => tour.level === criteria.tourLevel)
-    }
-
-    setTours(filteredTours)
-    setLoading(false)
-    setCurrentStep("results")
   }
 
   const handleTourSelect = (tour: Tour) => {
@@ -448,7 +361,7 @@ function TourResults({
           ← Back to Search
         </button>
         <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
           <p className="mt-4 text-gray-600">Searching for tours...</p>
         </div>
       </div>
@@ -470,7 +383,10 @@ function TourResults({
         <div className="bg-white rounded-lg shadow-md p-8 text-center">
           <h3 className="text-lg font-semibold mb-2">No tours found</h3>
           <p className="text-gray-600 mb-4">Try adjusting your search criteria.</p>
-          <button onClick={onBackToSearch} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+          <button
+            onClick={onBackToSearch}
+            className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600"
+          >
             Modify Search
           </button>
         </div>
@@ -561,7 +477,7 @@ function BookingForm({ tour, searchCriteria, onSubmit, onBack }: any) {
               depositAmount: Math.round(tour.price * 2 * 0.3),
             })
           }
-          className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          className="px-6 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600"
         >
           Continue to Payment
         </button>
@@ -599,7 +515,7 @@ function BookingConfirmation({ bookingData, bookingReference, onNewSearch }: any
         <h2 className="text-2xl font-semibold mb-4">Booking Confirmed!</h2>
         <p className="text-gray-600 mb-4">Reference: {bookingReference}</p>
         <p className="text-gray-600 mb-6">Your African adventure is secured!</p>
-        <button onClick={onNewSearch} className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+        <button onClick={onNewSearch} className="px-6 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600">
           Book Another Tour
         </button>
       </div>
