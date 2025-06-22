@@ -50,17 +50,14 @@ export function SearchForm({ onSearch }: SearchFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!country || !destination || !tourLevel || !startDate || !endDate) {
-      alert("Please fill in all required fields")
-      return
-    }
-
+    // All fields are now optional, so we don't need to validate them
     onSearch({
       country,
       destination,
       tourLevel,
-      startDate: format(startDate, "yyyy-MM-dd"),
-      endDate: format(endDate, "yyyy-MM-dd"),
+      // Only format dates if they are selected, otherwise use empty strings
+      startDate: startDate ? format(startDate, "yyyy-MM-dd") : "",
+      endDate: endDate ? format(endDate, "yyyy-MM-dd") : "",
       adults,
       children,
     })
@@ -85,7 +82,7 @@ export function SearchForm({ onSearch }: SearchFormProps) {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="country">Country *</Label>
+                <Label htmlFor="country">Country</Label>
                 <Select
                   value={country}
                   onValueChange={(value) => {
@@ -107,7 +104,7 @@ export function SearchForm({ onSearch }: SearchFormProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="destination">Destination *</Label>
+                <Label htmlFor="destination">Destination</Label>
                 <Select value={destination} onValueChange={setDestination} disabled={!country}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a destination" />
@@ -125,7 +122,7 @@ export function SearchForm({ onSearch }: SearchFormProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="tourLevel">Tour Level *</Label>
+              <Label htmlFor="tourLevel">Tour Level</Label>
               <Select value={tourLevel} onValueChange={setTourLevel}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select tour level" />
@@ -142,7 +139,7 @@ export function SearchForm({ onSearch }: SearchFormProps) {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Start Date *</Label>
+                <Label>Start Date</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full justify-start text-left font-normal">
@@ -163,7 +160,7 @@ export function SearchForm({ onSearch }: SearchFormProps) {
               </div>
 
               <div className="space-y-2">
-                <Label>End Date *</Label>
+                <Label>End Date</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full justify-start text-left font-normal">

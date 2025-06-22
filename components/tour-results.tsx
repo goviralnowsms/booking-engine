@@ -88,8 +88,30 @@ export function TourResults({ searchCriteria, onTourSelect, onBackToSearch }: To
       // Simulate network delay
       await new Promise((resolve) => setTimeout(resolve, 1500))
 
-      // Filter tours based on search criteria
-      const filteredTours = mockTours.filter((tour) => tour.level === searchCriteria.tourLevel)
+      // Apply filters only if they are specified
+      let filteredTours = [...mockTours]
+
+      // Filter by tour level if specified
+      if (searchCriteria.tourLevel) {
+        filteredTours = filteredTours.filter((tour) => tour.level === searchCriteria.tourLevel)
+      }
+
+      // Filter by country if specified - this would be integrated with the location field in a real implementation
+      if (searchCriteria.country) {
+        // This is a simplified example - in a real implementation, you'd need to match the country with locations
+        filteredTours = filteredTours.filter((tour) =>
+          tour.location.toLowerCase().includes(searchCriteria.country.toLowerCase())
+        )
+      }
+
+      // Filter by destination if specified
+      if (searchCriteria.destination) {
+        filteredTours = filteredTours.filter((tour) =>
+          tour.location.toLowerCase().includes(searchCriteria.destination.toLowerCase())
+        )
+      }
+
+      // Additional date filters would be applied here in a real implementation
 
       setTours(filteredTours)
       setLoading(false)

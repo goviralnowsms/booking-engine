@@ -2,15 +2,15 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { ArrowLeft, CreditCard, Lock, Shield } from "lucide-react"
 import type { BookingData } from "@/app/page"
+import { initiatePayment, verifyPaymentStatus, processPaymentCallback } from "@/lib/paymentAPI"
+// Import the payment config to display the correct provider name
+import { PAYMENT_CONFIG } from "@/lib/api/config"
 
 interface PaymentFormProps {
   bookingData: BookingData
@@ -19,48 +19,92 @@ interface PaymentFormProps {
 }
 
 export function PaymentForm({ bookingData, onPaymentComplete, onBack }: PaymentFormProps) {
-  const [paymentDetails, setPaymentDetails] = useState({
-    cardNumber: "",
-    expiryMonth: "",
-    expiryYear: "",
-    cvv: "",
-    cardholderName: "",
-  })
   const [processing, setProcessing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [paymentProvider, setPaymentProvider] = useState<string>(PAYMENT_CONFIG.PROVIDER)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setProcessing(true)
+  const initiatePaymentProcess = async () => {
+    try {
+      setProcessing(true)
+      setError(null)
 
-    // Simulate payment processing
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+      // Call our API function to initiate payment
+      const paymentSession = await initiatePayment(bookingData)
 
-    // Generate booking reference
-    const reference = `TIA${Date.now().toString().slice(-6)}`
+      // Store payment ID and provider in session storage for verification when redirected back
+      sessionStorage.setItem("paymentId", paymentSession.paymentId)
+      sessionStorage.setItem("paymentProvider", paymentSession.provider)
+      sessionStorage.setItem("bookingDetails", JSON.stringify(bookingData))
 
-    setProcessing(false)
-    onPaymentComplete(reference)
-  }
-
-  const formatCardNumber = (value: string) => {
-    const v = value.replace(/\s+/g, "").replace(/[^0-9]/gi, "")
-    const matches = v.match(/\d{4,16}/g)
-    const match = (matches && matches[0]) || ""
-    const parts = []
-    for (let i = 0, len = match.length; i < len; i += 4) {
-      parts.push(match.substring(i, i + 4))
-    }
-    if (parts.length) {
-      return parts.join(" ")
-    } else {
-      return v
+      // Redirect to payment provider's payment page
+      window.location.href = paymentSession.redirectUrl
+    } catch (err) {
+      console.error("Error initiating payment:", err)
+      setError("There was an error initiating the payment. Please try again.")
+      setProcessing(false)
     }
   }
 
-  const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatCardNumber(e.target.value)
-    setPaymentDetails((prev) => ({ ...prev, cardNumber: formatted }))
-  }
+  // Check if returning from payment provider's page
+  useEffect(() => {
+    const checkPaymentStatus = async () => {
+      // Get URL parameters
+      const urlParams = new URLSearchParams(window.location.search)
+      const status = urlParams.get("status") || urlParams.get("session_id") // Support both Tyro and Stripe parameters
+
+      // Get stored payment ID
+      const paymentId = sessionStorage.getItem("paymentId")
+      const storedProvider = sessionStorage.getItem("paymentProvider")
+      const storedBookingData = sessionStorage.getItem("bookingDetails")
+
+      // Update the payment provider state if available
+      if (storedProvider) {
+        setPaymentProvider(storedProvider)
+      }
+
+      // If we have a payment ID and we're returning from payment page
+      if (paymentId && (status || urlParams.size > 0)) {
+        setProcessing(true)
+
+        try {
+          // First try to process the callback data directly
+          const callbackResult = await processPaymentCallback(Object.fromEntries(urlParams))
+          
+          if (callbackResult.status === "COMPLETED") {
+            // Clear session storage
+            sessionStorage.removeItem("paymentId")
+            sessionStorage.removeItem("paymentProvider")
+            sessionStorage.removeItem("bookingDetails")
+
+            // Complete the payment process
+            onPaymentComplete(callbackResult.reference)
+          } else {
+            // If callback processing doesn't confirm completion, verify directly
+            const verificationResult = await verifyPaymentStatus(paymentId)
+            
+            if (verificationResult.status === "COMPLETED") {
+              // Clear session storage
+              sessionStorage.removeItem("paymentId")
+              sessionStorage.removeItem("paymentProvider")
+              sessionStorage.removeItem("bookingDetails")
+
+              // Complete the payment process
+              onPaymentComplete(verificationResult.reference)
+            } else {
+              setError("Payment was not completed. Please try again.")
+              setProcessing(false)
+            }
+          }
+        } catch (err) {
+          console.error("Error verifying payment:", err)
+          setError("There was an error verifying your payment. Please contact customer support.")
+          setProcessing(false)
+        }
+      }
+    }
+
+    checkPaymentStatus()
+  }, [onPaymentComplete])
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -82,117 +126,48 @@ export function PaymentForm({ bookingData, onPaymentComplete, onBack }: PaymentF
               <CardDescription>Secure payment processing for your deposit</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="cardholderName">Cardholder Name</Label>
-                  <Input
-                    id="cardholderName"
-                    value={paymentDetails.cardholderName}
-                    onChange={(e) =>
-                      setPaymentDetails((prev) => ({
-                        ...prev,
-                        cardholderName: e.target.value,
-                      }))
-                    }
-                    placeholder="John Doe"
-                    required
-                  />
-                </div>
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg">{error}</div>
+              )}
 
-                <div className="space-y-2">
-                  <Label htmlFor="cardNumber">Card Number</Label>
-                  <Input
-                    id="cardNumber"
-                    value={paymentDetails.cardNumber}
-                    onChange={handleCardNumberChange}
-                    placeholder="1234 5678 9012 3456"
-                    maxLength={19}
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="expiryMonth">Month</Label>
-                    <Select
-                      value={paymentDetails.expiryMonth}
-                      onValueChange={(value) => setPaymentDetails((prev) => ({ ...prev, expiryMonth: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="MM" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Array.from({ length: 12 }, (_, i) => {
-                          const month = (i + 1).toString().padStart(2, "0")
-                          return (
-                            <SelectItem key={month} value={month}>
-                              {month}
-                            </SelectItem>
-                          )
-                        })}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="expiryYear">Year</Label>
-                    <Select
-                      value={paymentDetails.expiryYear}
-                      onValueChange={(value) => setPaymentDetails((prev) => ({ ...prev, expiryYear: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="YYYY" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Array.from({ length: 10 }, (_, i) => {
-                          const year = (new Date().getFullYear() + i).toString()
-                          return (
-                            <SelectItem key={year} value={year}>
-                              {year}
-                            </SelectItem>
-                          )
-                        })}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="cvv">CVV</Label>
-                    <Input
-                      id="cvv"
-                      value={paymentDetails.cvv}
-                      onChange={(e) =>
-                        setPaymentDetails((prev) => ({
-                          ...prev,
-                          cvv: e.target.value.replace(/\D/g, "").slice(0, 4),
-                        }))
-                      }
-                      placeholder="123"
-                      maxLength={4}
-                      required
-                    />
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2 text-sm text-gray-600 bg-gray-50 p-4 rounded-lg">
+                  <Shield className="w-5 h-5" />
+                  <div>
+                    <p className="font-medium">Secure Payment with {paymentProvider === 'tyro' ? 'Tyro' : 'Stripe'}</p>
+                    <p>You'll be redirected to {paymentProvider === 'tyro' ? 'Tyro' : 'Stripe'}'s secure payment page to complete your transaction.</p>
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-                  <Shield className="w-4 h-4" />
-                  <span>Your payment information is encrypted and secure</span>
+                <div className="bg-blue-50 p-4 rounded-lg space-y-2">
+                  <h3 className="font-medium text-blue-800">Payment Information</h3>
+                  <ul className="text-sm text-blue-700 space-y-1">
+                    <li>• All payments are processed securely by {paymentProvider === 'tyro' ? 'Tyro' : 'Stripe'}</li>
+                    <li>• Your card details are never stored on our servers</li>
+                    <li>• You'll only be charged the deposit amount today</li>
+                    <li>• Supported cards: Visa, Mastercard, American Express</li>
+                  </ul>
                 </div>
 
-                <Button type="submit" className="w-full" size="lg" disabled={processing}>
+                <Button
+                  onClick={initiatePaymentProcess}
+                  className="w-full"
+                  size="lg"
+                  disabled={processing}
+                >
                   {processing ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Processing Payment...
+                      Processing...
                     </>
                   ) : (
                     <>
                       <Lock className="w-4 h-4 mr-2" />
-                      Pay Deposit ${bookingData.depositAmount}
+                      Pay Deposit ${bookingData.depositAmount} Securely
                     </>
                   )}
                 </Button>
-              </form>
+              </div>
             </CardContent>
           </Card>
         </div>
