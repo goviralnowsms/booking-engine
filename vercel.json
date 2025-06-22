@@ -1,14 +1,12 @@
 {
-  // Force Node 18 during the “Install” step
+  "version": 2,
   "nodeVersion": "18.x",
-
-  // Pass the safe npm flag so the install never aborts
-  "installCommand": "npm install --legacy-peer-deps",
-
+  "installCommand": "npm ci --legacy-peer-deps",
   "buildCommand": "npm run build",
-
+  "outputDirectory": ".next",
+  "framework": "nextjs",
   "functions": {
-    "app/api/**/*.ts": {
+    "app/**/*.ts": {
       "maxDuration": 30
     }
   }

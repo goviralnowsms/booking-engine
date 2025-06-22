@@ -3,8 +3,8 @@ import type { Metadata } from "next"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "This is Africa - Book Your Adventure",
-  description: "Book authentic African tours and safaris",
+  title: "This is Africa",
+  description: "Book Your African Adventure",
     generator: 'v0.dev'
 }
 

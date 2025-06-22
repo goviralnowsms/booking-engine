@@ -152,81 +152,83 @@ export default function BookingEngine() {
       </div>
 
       <main className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Discover Your African Adventure</h1>
-            <p className="text-xl text-gray-600">Search and book authentic African tours</p>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">🔍 Search Tours</h2>
-
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
-                  <select
-                    value=""
-                    onChange={(e) => console.log(e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  >
-                    <option value="">Any country</option>
-                    <option value="South Africa">South Africa</option>
-                    <option value="Kenya">Kenya</option>
-                    <option value="Tanzania">Tanzania</option>
-                    <option value="Uganda">Uganda</option>
-                    <option value="Rwanda">Rwanda</option>
-                    <option value="Botswana">Botswana</option>
-                    <option value="Namibia">Namibia</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Destination</label>
-                  <input
-                    type="text"
-                    value=""
-                    onChange={(e) => console.log(e.target.value)}
-                    placeholder="e.g. Kruger, Serengeti"
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  />
-                </div>
-              </div>
-
-              <button className="w-full bg-orange-500 text-white py-3 px-4 rounded-md hover:bg-orange-600 transition-colors font-medium">
-                🔍 Search Tours
-              </button>
+        {currentStep === "search" && (
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-8">
+              <h1 className="text-4xl font-bold text-gray-900 mb-4">Discover Your African Adventure</h1>
+              <p className="text-xl text-gray-600">Search and book authentic African tours</p>
             </div>
 
-            {/* Demo Tours */}
-            <div className="mt-8">
-              <h3 className="text-lg font-semibold mb-4">Featured Tours</h3>
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold mb-4">🔍 Search Tours</h2>
+
               <div className="space-y-4">
-                <div className="border rounded-lg p-4">
-                  <h4 className="font-semibold">Kruger National Park Safari</h4>
-                  <p className="text-gray-600 text-sm">3-day Big Five safari experience</p>
-                  <div className="flex justify-between items-center mt-2">
-                    <span className="text-lg font-bold">$1,200</span>
-                    <button className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600">
-                      View Details
-                    </button>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                    <select
+                      value=""
+                      onChange={(e) => console.log(e.target.value)}
+                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    >
+                      <option value="">Any country</option>
+                      <option value="South Africa">South Africa</option>
+                      <option value="Kenya">Kenya</option>
+                      <option value="Tanzania">Tanzania</option>
+                      <option value="Uganda">Uganda</option>
+                      <option value="Rwanda">Rwanda</option>
+                      <option value="Botswana">Botswana</option>
+                      <option value="Namibia">Namibia</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Destination</label>
+                    <input
+                      type="text"
+                      value=""
+                      onChange={(e) => console.log(e.target.value)}
+                      placeholder="e.g. Kruger, Serengeti"
+                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    />
                   </div>
                 </div>
 
-                <div className="border rounded-lg p-4">
-                  <h4 className="font-semibold">Serengeti Migration</h4>
-                  <p className="text-gray-600 text-sm">5-day luxury safari experience</p>
-                  <div className="flex justify-between items-center mt-2">
-                    <span className="text-lg font-bold">$2,800</span>
-                    <button className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600">
-                      View Details
-                    </button>
+                <button className="w-full bg-orange-500 text-white py-3 px-4 rounded-md hover:bg-orange-600 transition-colors font-medium">
+                  🔍 Search Tours
+                </button>
+              </div>
+
+              {/* Demo Tours */}
+              <div className="mt-8">
+                <h3 className="text-lg font-semibold mb-4">Featured Tours</h3>
+                <div className="space-y-4">
+                  <div className="border rounded-lg p-4">
+                    <h4 className="font-semibold">Kruger National Park Safari</h4>
+                    <p className="text-gray-600 text-sm">3-day Big Five safari experience</p>
+                    <div className="flex justify-between items-center mt-2">
+                      <span className="text-lg font-bold">$1,200</span>
+                      <button className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600">
+                        View Details
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="border rounded-lg p-4">
+                    <h4 className="font-semibold">Serengeti Migration</h4>
+                    <p className="text-gray-600 text-sm">5-day luxury safari experience</p>
+                    <div className="flex justify-between items-center mt-2">
+                      <span className="text-lg font-bold">$2,800</span>
+                      <button className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600">
+                        View Details
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {currentStep === "results" && (
           <TourResults
