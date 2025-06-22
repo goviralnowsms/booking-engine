@@ -1,6 +1,4 @@
 "use client"
-
-import type React from "react"
 import { useState, useEffect } from "react"
 
 export type BookingStep = "search" | "results" | "booking" | "payment" | "confirmation"
@@ -130,8 +128,8 @@ export default function BookingEngine() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between py-4">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center">
                 <span className="text-white font-bold">🌍</span>
@@ -154,7 +152,81 @@ export default function BookingEngine() {
       </div>
 
       <main className="container mx-auto px-4 py-8">
-        {currentStep === "search" && <SearchForm onSearch={handleSearch} />}
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">Discover Your African Adventure</h1>
+            <p className="text-xl text-gray-600">Search and book authentic African tours</p>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold mb-4">🔍 Search Tours</h2>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                  <select
+                    value=""
+                    onChange={(e) => console.log(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  >
+                    <option value="">Any country</option>
+                    <option value="South Africa">South Africa</option>
+                    <option value="Kenya">Kenya</option>
+                    <option value="Tanzania">Tanzania</option>
+                    <option value="Uganda">Uganda</option>
+                    <option value="Rwanda">Rwanda</option>
+                    <option value="Botswana">Botswana</option>
+                    <option value="Namibia">Namibia</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Destination</label>
+                  <input
+                    type="text"
+                    value=""
+                    onChange={(e) => console.log(e.target.value)}
+                    placeholder="e.g. Kruger, Serengeti"
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  />
+                </div>
+              </div>
+
+              <button className="w-full bg-orange-500 text-white py-3 px-4 rounded-md hover:bg-orange-600 transition-colors font-medium">
+                🔍 Search Tours
+              </button>
+            </div>
+
+            {/* Demo Tours */}
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold mb-4">Featured Tours</h3>
+              <div className="space-y-4">
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold">Kruger National Park Safari</h4>
+                  <p className="text-gray-600 text-sm">3-day Big Five safari experience</p>
+                  <div className="flex justify-between items-center mt-2">
+                    <span className="text-lg font-bold">$1,200</span>
+                    <button className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600">
+                      View Details
+                    </button>
+                  </div>
+                </div>
+
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold">Serengeti Migration</h4>
+                  <p className="text-gray-600 text-sm">5-day luxury safari experience</p>
+                  <div className="flex justify-between items-center mt-2">
+                    <span className="text-lg font-bold">$2,800</span>
+                    <button className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600">
+                      View Details
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {currentStep === "results" && (
           <TourResults
@@ -197,146 +269,6 @@ export default function BookingEngine() {
           <p>&copy; 2024 This is Africa. All rights reserved.</p>
         </div>
       </footer>
-    </div>
-  )
-}
-
-// Simple Search Form Component
-function SearchForm({ onSearch }: { onSearch: (criteria: SearchCriteria) => void }) {
-  const [country, setCountry] = useState("")
-  const [destination, setDestination] = useState("")
-  const [tourLevel, setTourLevel] = useState("")
-  const [startDate, setStartDate] = useState("")
-  const [endDate, setEndDate] = useState("")
-  const [adults, setAdults] = useState(2)
-  const [children, setChildren] = useState(0)
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    onSearch({
-      country: country || undefined,
-      destination: destination || undefined,
-      tourLevel: tourLevel || undefined,
-      startDate: startDate || undefined,
-      endDate: endDate || undefined,
-      adults: adults || 2,
-      children: children || 0,
-    })
-  }
-
-  return (
-    <div className="max-w-4xl mx-auto">
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">Discover Your African Adventure</h1>
-        <p className="text-xl text-gray-600">Search and book authentic African tours - all fields are optional</p>
-      </div>
-
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold mb-4">🔍 Search Tours</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
-              <select
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-              >
-                <option value="">Any country</option>
-                <option value="South Africa">South Africa</option>
-                <option value="Kenya">Kenya</option>
-                <option value="Tanzania">Tanzania</option>
-                <option value="Uganda">Uganda</option>
-                <option value="Rwanda">Rwanda</option>
-                <option value="Botswana">Botswana</option>
-                <option value="Namibia">Namibia</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Destination</label>
-              <input
-                type="text"
-                value={destination}
-                onChange={(e) => setDestination(e.target.value)}
-                placeholder="e.g. Kruger, Serengeti, Cape Town"
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                min={new Date().toISOString().split("T")[0]}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                min={startDate || new Date().toISOString().split("T")[0]}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tour Level</label>
-            <select
-              value={tourLevel}
-              onChange={(e) => setTourLevel(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-            >
-              <option value="">Any level</option>
-              <option value="basic">Basic - Budget Friendly</option>
-              <option value="standard">Standard - Comfortable</option>
-              <option value="luxury">Luxury - Premium Experience</option>
-            </select>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Adults</label>
-              <input
-                type="number"
-                min="1"
-                max="10"
-                value={adults}
-                onChange={(e) => setAdults(Number(e.target.value) || 1)}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Children</label>
-              <input
-                type="number"
-                min="0"
-                max="10"
-                value={children}
-                onChange={(e) => setChildren(Number(e.target.value) || 0)}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            className="w-full bg-orange-500 text-white py-3 px-4 rounded-md hover:bg-orange-600 transition-colors font-medium"
-          >
-            🔍 Search Tours
-          </button>
-        </form>
-      </div>
     </div>
   )
 }
@@ -476,7 +408,7 @@ function SimpleBookingForm({ tour, searchCriteria, onSubmit, onBack }: any) {
               depositAmount: Math.round(tour.price * 2 * 0.3),
             })
           }
-          className="px-6 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600"
+          className="px-6 py-2 bg-orange-600 text-white rounded-md hover:bg-green-700"
         >
           Continue to Payment
         </button>
