@@ -1,6 +1,12 @@
 {
-  "installCommand": "npm install",
+  // Force Node 18 during the “Install” step
+  "nodeVersion": "18.x",
+
+  // Pass the safe npm flag so the install never aborts
+  "installCommand": "npm install --legacy-peer-deps",
+
   "buildCommand": "npm run build",
+
   "functions": {
     "app/api/**/*.ts": {
       "maxDuration": 30
