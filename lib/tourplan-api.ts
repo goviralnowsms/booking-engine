@@ -377,6 +377,34 @@ export class TourplanAPI {
     return filteredTours
   }
 
+  async checkAvailability(tourId: string, date: string): Promise<any> {
+    // Check if we have valid Tourplan credentials
+    if (!this.config.baseUrl || !this.config.username || !this.config.password) {
+      console.log("Tourplan credentials not configured, returning mock availability")
+      return this.getMockAvailability(tourId, date)
+    }
+
+    try {
+      // For now, return mock data until we implement the full XML request
+      return this.getMockAvailability(tourId, date)
+    } catch (error) {
+      console.error("Tourplan availability check failed, falling back to mock data:", error)
+      return this.getMockAvailability(tourId, date)
+    }
+  }
+
+  private getMockAvailability(tourId: string, date: string): any {
+    return {
+      available: true,
+      price: 950,
+      currency: "USD",
+      maxParticipants: 20,
+      currentBookings: 5,
+      tourId,
+      date
+    }
+  }
+
   // Other methods remain the same but with error handling...
   async createBooking(bookingRequest: TourplanBookingRequest): Promise<TourplanBookingResponse> {
     // Mock implementation for now
