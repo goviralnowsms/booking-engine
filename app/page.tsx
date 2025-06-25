@@ -68,6 +68,27 @@ export default function BookingEngine() {
   const [dbStatus, setDbStatus] = useState<string>("Demo mode - using sample data")
   const [showDbStatus, setShowDbStatus] = useState(false)
 
+  // Handle URL parameters for direct tour links
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const tourId = urlParams.get("tour")
+    const country = urlParams.get("country")
+    const destination = urlParams.get("destination")
+
+    if (tourId || country || destination) {
+      // Pre-populate search criteria from URL
+      const criteria: SearchCriteria = {
+        country: country || undefined,
+        destination: destination || undefined,
+      }
+
+      if (Object.keys(criteria).some((key) => criteria[key as keyof SearchCriteria])) {
+        setSearchCriteria(criteria)
+        setCurrentStep("results")
+      }
+    }
+  }, [])
+
   useEffect(() => {
     const testDatabase = async () => {
       try {
