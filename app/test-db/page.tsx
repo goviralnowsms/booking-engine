@@ -1,271 +1,204 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createClient } from "@supabase/supabase-js"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, XCircle, AlertCircle, Database } from "lucide-react"
+import { CheckCircle, XCircle, AlertCircle, Database, RefreshCw, ExternalLink } from "lucide-react"
 
 interface TestResult {
-  name: string
-  status: "success" | "error" | "warning"
-  message: string
+  success: boolean
+  status: string
   details?: any
 }
 
 export default function DatabaseTestPage() {
-  const [results, setResults] = useState<TestResult[]>([])
+  const [result, setResult] = useState<TestResult | null>(null)
   const [testing, setTesting] = useState(false)
-  const [supabase, setSupabase] = useState<any>(null)
+
+  const runTest = async () => {
+    setTesting(true)
+    setResult(null)
+
+    try {
+      const response = await fetch("/api/test-db", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      setResult(data)
+    } catch (error) {
+      setResult({
+        success: false,
+        status: `❌ Request Failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        details: {
+          error: error instanceof Error ? error.message : "Unknown error",
+          suggestion: "Check if the API route is working",
+          troubleshooting: [
+            "1. Try refreshing the page",
+            "2. Check Vercel deployment logs",
+            "3. Verify Supabase project is active",
+          ],
+        },
+      })
+    } finally {
+      setTesting(false)
+    }
+  }
 
   useEffect(() => {
-    // Initialize Supabase client
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-    if (supabaseUrl && supabaseKey) {
-      const client = createClient(supabaseUrl, supabaseKey)
-      setSupabase(client)
-    }
+    runTest()
   }, [])
 
-  const runTests = async () => {
-    if (!supabase) {
-      setResults([
-        {
-          name: "Environment Variables",
-          status: "error",
-          message: "Supabase environment variables not found",
-          details: {
-            NEXT_PUBLIC_SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-            NEXT_PUBLIC_SUPABASE_ANON_KEY: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-          },
-        },
-      ])
-      return
-    }
-
-    setTesting(true)
-    const testResults: TestResult[] = []
-
-    // Test 1: Environment Variables
-    testResults.push({
-      name: "Environment Variables",
-      status: "success",
-      message: "Supabase environment variables found",
-      details: {
-        NEXT_PUBLIC_SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      },
-    })
-
-    // Test 2: Connection Test
-    try {
-      const { data, error } = await supabase.from("customers").select("count").limit(1)
-      if (error) {
-        testResults.push({
-          name: "Database Connection",
-          status: "error",
-          message: `Connection failed: ${error.message}`,
-          details: error,
-        })
-      } else {
-        testResults.push({
-          name: "Database Connection",
-          status: "success",
-          message: "Successfully connected to Supabase",
-        })
-      }
-    } catch (err) {
-      testResults.push({
-        name: "Database Connection",
-        status: "error",
-        message: `Connection error: ${err instanceof Error ? err.message : "Unknown error"}`,
-      })
-    }
-
-    // Test 3: Check Tables Exist
-    const tables = ["customers", "bookings", "payments", "booking_extras"]
-    for (const table of tables) {
-      try {
-        const { data, error } = await supabase.from(table).select("*").limit(1)
-        if (error) {
-          testResults.push({
-            name: `Table: ${table}`,
-            status: "error",
-            message: `Table not found or accessible: ${error.message}`,
-            details: error,
-          })
-        } else {
-          testResults.push({
-            name: `Table: ${table}`,
-            status: "success",
-            message: `Table exists and accessible`,
-          })
-        }
-      } catch (err) {
-        testResults.push({
-          name: `Table: ${table}`,
-          status: "error",
-          message: `Error checking table: ${err instanceof Error ? err.message : "Unknown error"}`,
-        })
-      }
-    }
-
-    // Test 4: Create Test Customer
-    try {
-      const testEmail = `test-${Date.now()}@example.com`
-      const { data: customer, error } = await supabase
-        .from("customers")
-        .insert({
-          first_name: "Test",
-          last_name: "Customer",
-          email: testEmail,
-          phone: "+1234567890",
-        })
-        .select()
-        .single()
-
-      if (error) {
-        testResults.push({
-          name: "Create Test Customer",
-          status: "error",
-          message: `Failed to create customer: ${error.message}`,
-          details: error,
-        })
-      } else {
-        testResults.push({
-          name: "Create Test Customer",
-          status: "success",
-          message: "Successfully created test customer",
-          details: customer,
-        })
-
-        // Test 5: Clean up test data
-        const { error: deleteError } = await supabase.from("customers").delete().eq("id", customer.id)
-        if (deleteError) {
-          testResults.push({
-            name: "Cleanup Test Data",
-            status: "warning",
-            message: `Test customer created but cleanup failed: ${deleteError.message}`,
-          })
-        } else {
-          testResults.push({
-            name: "Cleanup Test Data",
-            status: "success",
-            message: "Test customer cleaned up successfully",
-          })
-        }
-      }
-    } catch (err) {
-      testResults.push({
-        name: "Create Test Customer",
-        status: "error",
-        message: `Error creating customer: ${err instanceof Error ? err.message : "Unknown error"}`,
-      })
-    }
-
-    setResults(testResults)
-    setTesting(false)
+  const getStatusIcon = () => {
+    if (testing) return <RefreshCw className="w-6 h-6 animate-spin text-blue-500" />
+    if (!result) return <Database className="w-6 h-6 text-gray-500" />
+    return result.success ? (
+      <CheckCircle className="w-6 h-6 text-green-500" />
+    ) : (
+      <XCircle className="w-6 h-6 text-red-500" />
+    )
   }
 
-  const getStatusIcon = (status: TestResult["status"]) => {
-    switch (status) {
-      case "success":
-        return <CheckCircle className="w-5 h-5 text-green-500" />
-      case "error":
-        return <XCircle className="w-5 h-5 text-red-500" />
-      case "warning":
-        return <AlertCircle className="w-5 h-5 text-yellow-500" />
-    }
-  }
-
-  const getStatusBadge = (status: TestResult["status"]) => {
-    switch (status) {
-      case "success":
-        return <Badge className="bg-green-100 text-green-800">Success</Badge>
-      case "error":
-        return <Badge className="bg-red-100 text-red-800">Error</Badge>
-      case "warning":
-        return <Badge className="bg-yellow-100 text-yellow-800">Warning</Badge>
-    }
+  const getStatusBadge = () => {
+    if (testing) return <Badge className="bg-blue-100 text-blue-800">Testing...</Badge>
+    if (!result) return <Badge variant="secondary">Ready</Badge>
+    return result.success ? (
+      <Badge className="bg-green-100 text-green-800">Success</Badge>
+    ) : (
+      <Badge className="bg-red-100 text-red-800">Error</Badge>
+    )
   }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4 max-w-4xl">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Supabase Integration Test</h1>
-          <p className="text-gray-600">Test your database connection and table structure</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Database Connection Test</h1>
+          <p className="text-gray-600">Diagnose your Supabase integration</p>
         </div>
 
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Database className="w-5 h-5" />
-              Database Connection Test
+            <CardTitle className="flex items-center gap-3">
+              {getStatusIcon()}
+              Database Status
+              {getStatusBadge()}
             </CardTitle>
-            <CardDescription>
-              This will test your Supabase connection, tables, and basic CRUD operations
-            </CardDescription>
+            <CardDescription>Testing connection to Supabase database and table structure</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={runTests} disabled={testing} className="w-full" size="lg">
-              {testing ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Running Tests...
-                </>
-              ) : (
-                <>
-                  <Database className="w-4 h-4 mr-2" />
-                  Run Database Tests
-                </>
+            <div className="space-y-4">
+              <Button onClick={runTest} disabled={testing} className="w-full" size="lg">
+                {testing ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Testing Connection...
+                  </>
+                ) : (
+                  <>
+                    <Database className="w-4 h-4 mr-2" />
+                    Test Database Connection
+                  </>
+                )}
+              </Button>
+
+              {result && (
+                <div className="space-y-4">
+                  <div className="p-4 rounded-lg bg-gray-50">
+                    <h3 className="font-medium mb-2">Status</h3>
+                    <p className={result.success ? "text-green-700" : "text-red-700"}>{result.status}</p>
+                  </div>
+
+                  {result.details && (
+                    <div className="p-4 rounded-lg bg-gray-50">
+                      <h3 className="font-medium mb-2">Details</h3>
+                      {result.details.message && <p className="text-sm mb-2">{result.details.message}</p>}
+                      {result.details.suggestion && (
+                        <p className="text-sm text-blue-600 mb-2">
+                          <strong>Suggestion:</strong> {result.details.suggestion}
+                        </p>
+                      )}
+                      {result.details.troubleshooting && (
+                        <div className="text-sm">
+                          <strong>Troubleshooting Steps:</strong>
+                          <ul className="list-disc list-inside mt-1 space-y-1">
+                            {result.details.troubleshooting.map((step: string, index: number) => (
+                              <li key={index}>{step}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {!result.success && (
+                    <div className="p-4 rounded-lg bg-yellow-50 border border-yellow-200">
+                      <h3 className="font-medium text-yellow-800 mb-2 flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4" />
+                        Quick Fixes
+                      </h3>
+                      <div className="text-sm text-yellow-700 space-y-2">
+                        <p>
+                          1. <strong>Check Supabase Project:</strong> Make sure it's active and not paused
+                        </p>
+                        <p>
+                          2. <strong>Verify Integration:</strong> Check Vercel dashboard → Settings → Integrations
+                        </p>
+                        <p>
+                          3. <strong>Redeploy:</strong> Try redeploying your application
+                        </p>
+                        <div className="mt-3">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => window.open("https://vercel.com/dashboard", "_blank")}
+                          >
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            Open Vercel Dashboard
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {result.success && result.status.includes("Tables Need Setup") && (
+                    <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
+                      <h3 className="font-medium text-blue-800 mb-2">Next Step</h3>
+                      <p className="text-sm text-blue-700 mb-3">
+                        Connection successful! Now create the database tables in Supabase SQL Editor.
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open("https://supabase.com/dashboard", "_blank")}
+                      >
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        Open Supabase Dashboard
+                      </Button>
+                    </div>
+                  )}
+                </div>
               )}
-            </Button>
+            </div>
           </CardContent>
         </Card>
 
-        {results.length > 0 && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-gray-900">Test Results</h2>
-            {results.map((result, index) => (
-              <Card key={index}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start space-x-3">
-                      {getStatusIcon(result.status)}
-                      <div className="flex-1">
-                        <h3 className="font-medium text-gray-900">{result.name}</h3>
-                        <p className="text-sm text-gray-600 mt-1">{result.message}</p>
-                        {result.details && (
-                          <details className="mt-2">
-                            <summary className="text-xs text-gray-500 cursor-pointer">Show Details</summary>
-                            <pre className="text-xs bg-gray-100 p-2 rounded mt-1 overflow-auto">
-                              {JSON.stringify(result.details, null, 2)}
-                            </pre>
-                          </details>
-                        )}
-                      </div>
-                    </div>
-                    {getStatusBadge(result.status)}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-
-            <div className="mt-8 p-4 bg-blue-50 rounded-lg">
-              <h3 className="font-medium text-blue-900 mb-2">Next Steps:</h3>
-              <ul className="text-sm text-blue-800 space-y-1">
-                <li>• If all tests pass, your Supabase integration is working correctly</li>
-                <li>• If tables are missing, run the SQL script in your Supabase dashboard</li>
-                <li>• If connection fails, check your environment variables in Vercel</li>
-                <li>• Return to the main booking engine to test the full flow</li>
-              </ul>
-            </div>
-          </div>
-        )}
+        <div className="text-center space-x-4">
+          <Button variant="outline" onClick={() => (window.location.href = "/")}>
+            ← Back to Demo
+          </Button>
+          <Button variant="outline" onClick={() => (window.location.href = "/debug-supabase")}>
+            Advanced Debug
+          </Button>
+        </div>
       </div>
     </div>
   )

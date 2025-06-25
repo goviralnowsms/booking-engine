@@ -1,34 +1,18 @@
-import { PaymentService } from "@/lib/payment-service"
-
 export async function POST(request: Request) {
   try {
     const paymentData = await request.json()
-    const { bookingId, amount, currency, paymentType, paymentMethod, customerEmail } = paymentData
+    console.log("Processing payment:", paymentData)
 
-    const paymentResult = await PaymentService.processPayment({
-      bookingId,
-      amount,
-      currency,
-      paymentType,
-      paymentMethod,
-      customerEmail,
-    })
+    // Simulate payment processing time
+    await new Promise((resolve) => setTimeout(resolve, 3000))
 
-    if (!paymentResult.success) {
-      return Response.json(
-        {
-          error: "Payment failed",
-          details: paymentResult.error,
-        },
-        { status: 400 },
-      )
-    }
-
+    // Simulate successful payment
     return Response.json({
       success: true,
-      paymentId: paymentResult.paymentId,
-      transactionId: paymentResult.transactionId,
-      message: "Payment processed successfully",
+      paymentId: `pay_${Date.now()}`,
+      transactionId: `txn_${Date.now()}`,
+      message: "Payment processed successfully in demo mode",
+      demo: true,
     })
   } catch (error) {
     console.error("Payment processing failed:", error)

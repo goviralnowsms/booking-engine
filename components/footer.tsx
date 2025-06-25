@@ -21,18 +21,21 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-semibold mb-4">Important</h4>
+            <h4 className="font-semibold mb-4">Demo Features</h4>
             <div className="text-gray-300 text-sm space-y-2">
-              <p>• All bookings subject to confirmation</p>
-              <p>• Refunds processed manually</p>
-              <p>• Travel insurance recommended</p>
-              <p>• Terms & conditions apply</p>
+              <p>• Real-time tour search & filtering</p>
+              <p>• Complete booking process</p>
+              <p>• Secure payment simulation</p>
+              <p>• Mobile-responsive design</p>
             </div>
           </div>
         </div>
 
         <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400 text-sm">
-          <p>&copy; 2024 This is Africa. All rights reserved. Powered by Tourplan API.</p>
+          <p>
+            &copy; 2024 This is Africa. All rights reserved. |
+            <span className="text-orange-400 ml-2">Live Demo - Powered by Tourplan API Integration</span>
+          </p>
         </div>
       </div>
     </footer>

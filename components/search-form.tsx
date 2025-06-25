@@ -50,16 +50,14 @@ export function SearchForm({ onSearch }: SearchFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    // All fields are now optional, so we don't need to validate them
     onSearch({
-      country,
-      destination,
-      tourLevel,
-      // Only format dates if they are selected, otherwise use empty strings
-      startDate: startDate ? format(startDate, "yyyy-MM-dd") : "",
-      endDate: endDate ? format(endDate, "yyyy-MM-dd") : "",
-      adults,
-      children,
+      country: country || undefined,
+      destination: destination || undefined,
+      tourLevel: tourLevel || undefined,
+      startDate: startDate ? format(startDate, "yyyy-MM-dd") : undefined,
+      endDate: endDate ? format(endDate, "yyyy-MM-dd") : undefined,
+      adults: adults || 2,
+      children: children || 0,
     })
   }
 
