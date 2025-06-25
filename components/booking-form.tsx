@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { ArrowLeft, Calendar, Users, Clock } from "lucide-react"
-import type { SearchCriteria, Tour, BookingData } from "@/app/page"
+import type { SearchCriteria, Tour, BookingData, ChildInfo } from "@/app/page"
 
 interface BookingFormProps {
   tour: Tour
@@ -29,7 +29,6 @@ export function BookingForm({ tour, searchCriteria, onSubmit, onBack }: BookingF
     lastName: "",
     email: "",
     phone: "",
-    address: "",
   })
 
   const handleExtraToggle = (extraId: string, isCompulsory: boolean) => {
@@ -38,14 +37,44 @@ export function BookingForm({ tour, searchCriteria, onSubmit, onBack }: BookingF
     setSelectedExtras((prev) => (prev.includes(extraId) ? prev.filter((id) => id !== extraId) : [...prev, extraId]))
   }
 
+  // Helper function to calculate child pricing based on age
+  const getChildPriceMultiplier = (age: number) => {
+    if (age <= 2) return 0 // Infants travel free
+    if (age <= 5) return 0.25 // 25% of adult price for young children
+    if (age <= 11) return 0.5 // 50% of adult price for children
+    if (age <= 17) return 0.75 // 75% of adult price for teens
+    return 1 // Full adult price for 18+
+  }
+
   const calculateTotal = () => {
     const adults = searchCriteria.adults || 2
-    const children = searchCriteria.children || 0
-    const basePrice = tour.price * (adults + children)
+    const childrenAges = searchCriteria.childrenAges || []
+    
+    // Calculate adult pricing
+    const adultPrice = tour.price * adults
+    
+    // Calculate children pricing based on ages
+    const childrenPrice = childrenAges.reduce((total, child) => {
+      return total + (tour.price * getChildPriceMultiplier(child.age))
+    }, 0)
+    
+    const basePrice = adultPrice + childrenPrice
+    
+    // Calculate extras pricing (same logic for adults and children)
+    const totalPeople = adults + childrenAges.length
     const extrasPrice = selectedExtras.reduce((total, extraId) => {
       const extra = tour.extras.find((e) => e.id === extraId)
-      return total + (extra ? extra.price * (adults + children) : 0)
+      if (!extra) return total
+      
+      // Apply same age-based pricing for extras
+      const adultExtrasPrice = extra.price * adults
+      const childrenExtrasPrice = childrenAges.reduce((childTotal, child) => {
+        return childTotal + (extra.price * getChildPriceMultiplier(child.age))
+      }, 0)
+      
+      return total + adultExtrasPrice + childrenExtrasPrice
     }, 0)
+    
     return basePrice + extrasPrice
   }
 
@@ -63,7 +92,10 @@ export function BookingForm({ tour, searchCriteria, onSubmit, onBack }: BookingF
     const bookingData: BookingData = {
       tour,
       selectedExtras,
-      customerDetails,
+      customerDetails: {
+        ...customerDetails,
+        address: "", // Address will be collected during payment
+      },
       totalPrice,
       depositAmount,
     }
@@ -73,6 +105,7 @@ export function BookingForm({ tour, searchCriteria, onSubmit, onBack }: BookingF
 
   const adults = searchCriteria.adults || 2
   const children = searchCriteria.children || 0
+  const childrenAges = searchCriteria.childrenAges || []
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -107,9 +140,33 @@ export function BookingForm({ tour, searchCriteria, onSubmit, onBack }: BookingF
                   </div>
                   <div className="flex items-center">
                     <Users className="w-4 h-4 mr-1" />
-                    {adults} adults, {children} children
+                    {adults} adults
+                    {children > 0 && (
+                      <span>
+                        , {children} children
+                        {childrenAges.length > 0 && (
+                          <span className="text-xs text-gray-500 ml-1">
+                            (ages: {childrenAges.map(child => child.age).join(', ')})
+                          </span>
+                        )}
+                      </span>
+                    )}
                   </div>
                 </div>
+
+                {/* Age-based pricing information */}
+                {childrenAges.length > 0 && (
+                  <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                    <h4 className="text-sm font-medium text-blue-800 mb-2">Children's Pricing</h4>
+                    <div className="text-xs text-blue-700 space-y-1">
+                      <div>• Ages 0-2: Free</div>
+                      <div>• Ages 3-5: 25% of adult price</div>
+                      <div>• Ages 6-11: 50% of adult price</div>
+                      <div>• Ages 12-17: 75% of adult price</div>
+                      <div>• Ages 18+: Full adult price</div>
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -215,19 +272,6 @@ export function BookingForm({ tour, searchCriteria, onSubmit, onBack }: BookingF
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="address">Address</Label>
-                  <Input
-                    id="address"
-                    value={customerDetails.address}
-                    onChange={(e) =>
-                      setCustomerDetails((prev) => ({
-                        ...prev,
-                        address: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
               </form>
             </CardContent>
           </Card>
@@ -247,18 +291,53 @@ export function BookingForm({ tour, searchCriteria, onSubmit, onBack }: BookingF
               <Separator />
 
               <div className="space-y-2">
+                {/* Adult pricing */}
                 <div className="flex justify-between text-sm">
-                  <span>Base price ({adults + children} people)</span>
-                  <span>${tour.price * (adults + children)}</span>
+                  <span>Adults ({adults} × ${tour.price})</span>
+                  <span>${tour.price * adults}</span>
                 </div>
 
+                {/* Children pricing breakdown */}
+                {childrenAges.length > 0 && (
+                  <>
+                    {childrenAges.map((child, index) => {
+                      const childPrice = tour.price * getChildPriceMultiplier(child.age)
+                      const discountPercent = Math.round((1 - getChildPriceMultiplier(child.age)) * 100)
+                      return (
+                        <div key={child.id} className="flex justify-between text-sm">
+                          <span>
+                            Child {index + 1} (age {child.age})
+                            {discountPercent > 0 && (
+                              <span className="text-green-600 ml-1">
+                                -{discountPercent}%
+                              </span>
+                            )}
+                            {child.age <= 2 && (
+                              <span className="text-green-600 ml-1">FREE</span>
+                            )}
+                          </span>
+                          <span>${childPrice}</span>
+                        </div>
+                      )
+                    })}
+                  </>
+                )}
+
+                {/* Extras pricing */}
                 {selectedExtras.map((extraId) => {
                   const extra = tour.extras.find((e) => e.id === extraId)
                   if (!extra) return null
+                  
+                  const adultExtrasPrice = extra.price * adults
+                  const childrenExtrasPrice = childrenAges.reduce((total, child) => {
+                    return total + (extra.price * getChildPriceMultiplier(child.age))
+                  }, 0)
+                  const totalExtrasPrice = adultExtrasPrice + childrenExtrasPrice
+                  
                   return (
                     <div key={extraId} className="flex justify-between text-sm">
                       <span>{extra.name}</span>
-                      <span>+${extra.price * (adults + children)}</span>
+                      <span>+${totalExtrasPrice}</span>
                     </div>
                   )
                 })}

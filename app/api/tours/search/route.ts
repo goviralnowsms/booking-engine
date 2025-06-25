@@ -1,48 +1,64 @@
-import { getMockTours } from "@/lib/mock-tours"
+import { getTourplanAPI } from "@/lib/tourplan-api"
 
 export async function POST(request: Request) {
   try {
     const searchParams = await request.json()
     console.log("Search params:", searchParams)
 
-    // Simulate API delay for realistic experience
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    const tourplanAPI = getTourplanAPI()
+    
+    // Convert search parameters to Tourplan format
+    const tourplanParams = {
+      country: searchParams.country,
+      destination: searchParams.destination,
+      tourLevel: searchParams.tourLevel,
+      startDate: searchParams.startDate,
+      endDate: searchParams.endDate,
+      adults: searchParams.adults,
+      children: searchParams.children,
+      childrenAges: searchParams.childrenAges,
+    }
 
-    const tours = getMockTours(searchParams)
+    const tourplanTours = await tourplanAPI.searchTours(tourplanParams)
 
-    // Filter tours based on search criteria for demo
+    // Convert Tourplan tours to our frontend format
+    const tours = tourplanTours.map((tour) => ({
+      id: tour.tourId,
+      name: tour.tourName,
+      description: tour.description,
+      duration: tour.duration,
+      price: tour.priceFrom,
+      level: tour.tourLevel,
+      availability: tour.availability,
+      supplier: tour.supplierName,
+      location: `${tour.destination}, ${tour.country}`,
+      extras: tour.extras.map((extra) => ({
+        id: extra.extraId,
+        name: extra.extraName,
+        description: extra.description,
+        price: extra.price,
+        isCompulsory: extra.isCompulsory,
+      })),
+    }))
+
+    // Apply additional filtering for tour type if specified
     let filteredTours = tours
-
-    if (searchParams.country) {
-      filteredTours = filteredTours.filter((tour) =>
-        tour.location.toLowerCase().includes(searchParams.country.toLowerCase()),
-      )
-    }
-
-    if (searchParams.destination) {
-      filteredTours = filteredTours.filter((tour) =>
-        tour.location.toLowerCase().includes(searchParams.destination.toLowerCase()),
-      )
-    }
-
-    if (searchParams.tourLevel) {
-      filteredTours = filteredTours.filter((tour) => tour.level === searchParams.tourLevel)
-    }
-
     if (searchParams.tourType) {
-      // Simple mapping of tour types to tours for demo
       const typeMapping: Record<string, string[]> = {
-        safari: ["kruger", "serengeti", "okavango"],
-        cultural: ["cape town", "village"],
-        adventure: ["victoria falls", "gorilla", "helicopter"],
-        luxury: ["serengeti", "kruger"],
-        family: ["cape town", "victoria falls"],
+        safari: ["kruger", "serengeti", "okavango", "safari"],
+        cultural: ["cape town", "village", "cultural"],
+        adventure: ["victoria falls", "gorilla", "helicopter", "adventure"],
+        luxury: ["luxury", "premium"],
+        family: ["family", "cape town", "victoria falls"],
       }
 
       const relevantKeywords = typeMapping[searchParams.tourType] || []
       if (relevantKeywords.length > 0) {
         filteredTours = filteredTours.filter((tour) =>
-          relevantKeywords.some((keyword) => tour.name.toLowerCase().includes(keyword)),
+          relevantKeywords.some((keyword) =>
+            tour.name.toLowerCase().includes(keyword) ||
+            tour.description.toLowerCase().includes(keyword)
+          ),
         )
       }
     }
@@ -59,7 +75,7 @@ export async function POST(request: Request) {
       tours: sortedTours,
       cached: false,
       timestamp: new Date().toISOString(),
-      source: "demo-data",
+      source: "tourplan-api",
       searchCriteria: searchParams,
       totalFound: sortedTours.length,
     })

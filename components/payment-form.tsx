@@ -26,12 +26,29 @@ export function PaymentForm({ bookingData, onPaymentComplete, onBack }: PaymentF
     cvv: "",
     cardholderName: "",
   })
+  const [billingAddress, setBillingAddress] = useState({
+    street: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    country: "",
+  })
   const [processing, setProcessing] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Validate billing address
+    if (!billingAddress.street || !billingAddress.city || !billingAddress.state ||
+        !billingAddress.postalCode || !billingAddress.country) {
+      alert("Please fill in all required billing address fields")
+      return
+    }
+    
     setProcessing(true)
 
+    // Here you would typically send the billing address along with payment details
+    // to your payment processor
     await new Promise((resolve) => setTimeout(resolve, 2000))
 
     const reference = `TIA${Date.now().toString().slice(-6)}`
@@ -177,7 +194,112 @@ export function PaymentForm({ bookingData, onPaymentComplete, onBack }: PaymentF
                   <span>Your payment information is encrypted and secure</span>
                 </div>
 
-                <Button type="submit" className="w-full" size="lg" disabled={processing}>
+                <Separator className="my-6" />
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Billing Address</h3>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="street">Street Address *</Label>
+                    <Input
+                      id="street"
+                      value={billingAddress.street}
+                      onChange={(e) =>
+                        setBillingAddress((prev) => ({
+                          ...prev,
+                          street: e.target.value,
+                        }))
+                      }
+                      placeholder="123 Main Street"
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="city">City *</Label>
+                      <Input
+                        id="city"
+                        value={billingAddress.city}
+                        onChange={(e) =>
+                          setBillingAddress((prev) => ({
+                            ...prev,
+                            city: e.target.value,
+                          }))
+                        }
+                        placeholder="Cape Town"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="state">State/Province *</Label>
+                      <Input
+                        id="state"
+                        value={billingAddress.state}
+                        onChange={(e) =>
+                          setBillingAddress((prev) => ({
+                            ...prev,
+                            state: e.target.value,
+                          }))
+                        }
+                        placeholder="Western Cape"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="postalCode">Postal Code *</Label>
+                      <Input
+                        id="postalCode"
+                        value={billingAddress.postalCode}
+                        onChange={(e) =>
+                          setBillingAddress((prev) => ({
+                            ...prev,
+                            postalCode: e.target.value,
+                          }))
+                        }
+                        placeholder="8001"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="country">Country *</Label>
+                      <Input
+                        id="country"
+                        value={billingAddress.country}
+                        onChange={(e) =>
+                          setBillingAddress((prev) => ({
+                            ...prev,
+                            country: e.target.value,
+                          }))
+                        }
+                        placeholder="South Africa"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full"
+                  size="lg"
+                  disabled={
+                    processing ||
+                    !paymentDetails.cardNumber ||
+                    !paymentDetails.expiryMonth ||
+                    !paymentDetails.expiryYear ||
+                    !paymentDetails.cvv ||
+                    !paymentDetails.cardholderName ||
+                    !billingAddress.street ||
+                    !billingAddress.city ||
+                    !billingAddress.state ||
+                    !billingAddress.postalCode ||
+                    !billingAddress.country
+                  }
+                >
                   {processing ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>

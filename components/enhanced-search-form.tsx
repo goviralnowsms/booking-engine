@@ -11,9 +11,9 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { CalendarIcon, Search, MapPin, Users, Star, Filter, X } from "lucide-react"
+import { CalendarIcon, Search, MapPin, Users, Star, Filter, X, Plus, Minus } from "lucide-react"
 import { format } from "date-fns"
-import type { SearchCriteria } from "@/app/page"
+import type { SearchCriteria, ChildInfo } from "@/app/page"
 
 interface EnhancedSearchFormProps {
   onSearch: (criteria: SearchCriteria) => void
@@ -95,7 +95,39 @@ export function EnhancedSearchForm({ onSearch }: EnhancedSearchFormProps) {
   const [endDate, setEndDate] = useState<Date>()
   const [adults, setAdults] = useState(2)
   const [children, setChildren] = useState(0)
+  const [childrenAges, setChildrenAges] = useState<ChildInfo[]>([])
   const [showAdvanced, setShowAdvanced] = useState(false)
+
+  // Helper function to generate unique IDs for children
+  const generateChildId = () => `child_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+
+  // Update children ages when children count changes
+  const handleChildrenChange = (newChildrenCount: number) => {
+    setChildren(newChildrenCount)
+    
+    if (newChildrenCount === 0) {
+      setChildrenAges([])
+    } else if (newChildrenCount > childrenAges.length) {
+      // Add new children with default age
+      const newChildren: ChildInfo[] = []
+      for (let i = childrenAges.length; i < newChildrenCount; i++) {
+        newChildren.push({ id: generateChildId(), age: 5 })
+      }
+      setChildrenAges([...childrenAges, ...newChildren])
+    } else if (newChildrenCount < childrenAges.length) {
+      // Remove excess children
+      setChildrenAges(childrenAges.slice(0, newChildrenCount))
+    }
+  }
+
+  // Update individual child age
+  const updateChildAge = (childId: string, age: number) => {
+    setChildrenAges(prev =>
+      prev.map(child =>
+        child.id === childId ? { ...child, age } : child
+      )
+    )
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -111,6 +143,7 @@ export function EnhancedSearchForm({ onSearch }: EnhancedSearchFormProps) {
       endDate: endDate ? format(endDate, "yyyy-MM-dd") : undefined,
       adults: adults || 2,
       children: children || 0,
+      childrenAges: children > 0 ? childrenAges : undefined,
     }
 
     onSearch(criteria)
@@ -127,6 +160,7 @@ export function EnhancedSearchForm({ onSearch }: EnhancedSearchFormProps) {
     setEndDate(undefined)
     setAdults(2)
     setChildren(0)
+    setChildrenAges([])
   }
 
   const activeFiltersCount = [country, destination, tourLevel, tourType, duration, budget, startDate, endDate].filter(
@@ -329,7 +363,7 @@ export function EnhancedSearchForm({ onSearch }: EnhancedSearchFormProps) {
 
               <div className="space-y-2">
                 <Label htmlFor="children">Children</Label>
-                <Select value={children.toString()} onValueChange={(value) => setChildren(Number.parseInt(value))}>
+                <Select value={children.toString()} onValueChange={(value) => handleChildrenChange(Number.parseInt(value))}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -343,6 +377,46 @@ export function EnhancedSearchForm({ onSearch }: EnhancedSearchFormProps) {
                 </Select>
               </div>
             </div>
+
+            {/* Children Ages Section */}
+            {children > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  <Label className="text-base font-medium">Children's Ages</Label>
+                  <Badge variant="secondary" className="text-xs">
+                    Required for accurate pricing
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {childrenAges.map((child, index) => (
+                    <div key={child.id} className="space-y-2">
+                      <Label htmlFor={`child-${child.id}`} className="text-sm">
+                        Child {index + 1} Age
+                      </Label>
+                      <Select
+                        value={child.age.toString()}
+                        onValueChange={(value) => updateChildAge(child.id, Number.parseInt(value))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 18 }, (_, i) => i).map((age) => (
+                            <SelectItem key={age} value={age.toString()}>
+                              {age} {age === 1 ? "year" : "years"} old
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-sm text-gray-600">
+                  💡 Children's pricing varies by age. Infants (0-2) often travel free, while older children may have different rates.
+                </p>
+              </div>
+            )}
 
             {/* Advanced Filters Toggle */}
             <div className="flex justify-center">

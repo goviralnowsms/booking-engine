@@ -7,9 +7,13 @@ import { PaymentForm } from "@/components/payment-form"
 import { BookingConfirmation } from "@/components/booking-confirmation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { DemoBanner } from "@/components/demo-banner"
 
 export type BookingStep = "search" | "results" | "booking" | "payment" | "confirmation"
+
+export interface ChildInfo {
+  id: string
+  age: number
+}
 
 export interface SearchCriteria {
   country?: string
@@ -22,6 +26,7 @@ export interface SearchCriteria {
   endDate?: string
   adults?: number
   children?: number
+  childrenAges?: ChildInfo[]
 }
 
 export interface Tour {
@@ -133,7 +138,6 @@ export default function BookingEngine() {
       )}
 
       <main className="container mx-auto px-4 py-8">
-        <DemoBanner />
 
         {/* Optional: Add a small link to check database status */}
         {!showDbStatus && (
