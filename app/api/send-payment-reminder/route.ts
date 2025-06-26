@@ -1,3 +1,4 @@
+export const runtime = "nodejs"
 import { EmailService } from "@/lib/email-service"
 import { DatabaseService } from "@/lib/database"
 
