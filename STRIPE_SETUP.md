@@ -10,11 +10,11 @@ This guide explains how to safely add Stripe sandbox (test) keys to your project
 - Keep test and production keys separate
 
 ### 2. File Structure
-```
+\`\`\`
 .env.local          # Your actual keys (ignored by git)
 .env.example        # Template file (committed to git)
 .gitignore          # Ensures .env* files are not committed
-```
+\`\`\`
 
 ## 🚀 Quick Setup
 
@@ -28,15 +28,15 @@ This guide explains how to safely add Stripe sandbox (test) keys to your project
 
 ### Step 2: Configure Environment Variables
 1. Copy the example file:
-   ```bash
+   \`\`\`bash
    cp .env.example .env.local
-   ```
+   \`\`\`
 
 2. Edit `.env.local` and replace the placeholder values:
-   ```env
+   \`\`\`env
    STRIPE_API_KEY=sk_test_your_actual_secret_key_here
    STRIPE_PUBLIC_KEY=pk_test_your_actual_publishable_key_here
-   ```
+   \`\`\`
 
 ### Step 3: Verify Setup
 Your project is already configured to use these environment variables through [`lib/api/config.js`](lib/api/config.js).
@@ -62,40 +62,40 @@ Use these test card numbers in your payment forms:
 If you need to handle webhooks:
 
 1. Install Stripe CLI:
-   ```bash
+   \`\`\`bash
    npm install -g stripe-cli
-   ```
+   \`\`\`
 
 2. Login to Stripe:
-   ```bash
+   \`\`\`bash
    stripe login
-   ```
+   \`\`\`
 
 3. Forward webhooks to your local server:
-   ```bash
+   \`\`\`bash
    stripe listen --forward-to localhost:3000/api/payment/callback
-   ```
+   \`\`\`
 
 4. Copy the webhook signing secret and add to `.env.local`:
-   ```env
+   \`\`\`env
    STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_here
-   ```
+   \`\`\`
 
 ## 🌍 Environment-Specific Configuration
 
 ### Development (.env.local)
-```env
+\`\`\`env
 STRIPE_API_KEY=sk_test_...
 STRIPE_PUBLIC_KEY=pk_test_...
 APP_URL=http://localhost:3000
-```
+\`\`\`
 
 ### Production (.env.production)
-```env
+\`\`\`env
 STRIPE_API_KEY=sk_live_...
 STRIPE_PUBLIC_KEY=pk_live_...
 APP_URL=https://yourdomain.com
-```
+\`\`\`
 
 ## ⚠️ Important Security Notes
 

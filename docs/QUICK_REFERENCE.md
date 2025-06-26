@@ -11,7 +11,7 @@
 
 ## ⚡ Quick Start Commands
 
-```bash
+\`\`\`bash
 # 1. Start development server
 npm run dev
 
@@ -23,7 +23,7 @@ python test_tourplan_complete.py
 
 # 4. Open web dashboard
 # Navigate to: file:///path/to/docs/tourplan-api-dashboard.html
-```
+\`\`\`
 
 ## 🎯 API Endpoints Reference
 
@@ -46,7 +46,7 @@ python test_tourplan_complete.py
 ## 📝 Sample Payloads
 
 ### Tour Search
-```json
+\`\`\`json
 {
   "destination": "Cape Town",
   "country": "South Africa",
@@ -56,20 +56,20 @@ python test_tourplan_complete.py
   "adults": 2,
   "children": 0
 }
-```
+\`\`\`
 
 ### Tour Availability
-```json
+\`\`\`json
 {
   "tourId": "tour-001",
   "date": "2024-07-01",
   "adults": 2,
   "children": 0
 }
-```
+\`\`\`
 
 ### <a id="booking-payload"></a>Booking Creation
-```json
+\`\`\`json
 {
   "tourId": "tour-001",
   "startDate": "2024-07-01",
@@ -86,22 +86,22 @@ python test_tourplan_complete.py
   },
   "createAsProvisional": true
 }
-```
+\`\`\`
 
 ### Payment Processing
-```json
+\`\`\`json
 {
   "amount": 150000,
   "currency": "ZAR",
   "bookingId": "booking-001",
   "paymentMethod": "card"
 }
-```
+\`\`\`
 
 ## 🔧 Environment Configuration
 
 ### Required Environment Variables
-```env
+\`\`\`env
 # Tourplan API
 TOURPLAN_API_URL=https://pa-thisis.nx.tourplan.net/hostconnect_test/api/hostConnectApi
 TOURPLAN_USERNAME=your_username
@@ -111,7 +111,7 @@ TOURPLAN_AGENT_ID=SAMAGT
 # Testing Mode
 USE_MOCKS=true  # Set to false for live API testing
 NODE_ENV=development
-```
+\`\`\`
 
 ### IP Whitelisting & VPN Configuration
 - **Current Status:** Your static IP is whitelisted with Tourplan
@@ -124,21 +124,21 @@ NODE_ENV=development
 ## 🧪 Testing Scenarios
 
 ### 1. Quick Health Check
-```bash
+\`\`\`bash
 # Test local server
 curl http://localhost:3000/api/test-db
 
 # Test authentication
 python test_tourplan_api.py
-```
+\`\`\`
 
 ### 2. Full API Testing
-```bash
+\`\`\`bash
 # Run comprehensive test suite
 python test_tourplan_complete.py
 
 # Choose option 2 for full suite
-```
+\`\`\`
 
 ### 3. Interactive Testing
 1. Open [`docs/tourplan-api-dashboard.html`](./tourplan-api-dashboard.html) in browser
@@ -147,7 +147,7 @@ python test_tourplan_complete.py
 4. View real-time logs
 
 ### 4. Error Testing
-```json
+\`\`\`json
 // Test invalid tour ID
 {"tourId": "INVALID", "date": "2024-07-01"}
 
@@ -156,7 +156,7 @@ python test_tourplan_complete.py
 
 // Test missing fields
 {"tourId": "tour-001"}
-```
+\`\`\`
 
 ## 🐛 Common Issues & Solutions
 
@@ -188,7 +188,7 @@ python test_tourplan_complete.py
 
 ## 🔍 Debugging Commands
 
-```bash
+\`\`\`bash
 # Check environment variables
 node -e "console.log(process.env.TOURPLAN_API_URL)"
 
@@ -202,7 +202,7 @@ curl -I http://localhost:3000
 curl -X POST http://localhost:3000/api/tours/search \
   -H "Content-Type: application/json" \
   -d '{"destination": "Cape Town"}'
-```
+\`\`\`
 
 ## 📚 Documentation Files
 

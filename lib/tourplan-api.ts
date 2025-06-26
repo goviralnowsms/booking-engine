@@ -1,12 +1,19 @@
 import { parseStringPromise } from "xml2js"
 import { CacheManager } from "./cache"
 
+// Add type safety for the parseStringPromise function
+declare module "xml2js" {
+  export function parseStringPromise(xml: string): Promise<any>
+}
+
 export interface TourplanConfig {
   baseUrl: string
   soapSearchUrl: string
   username: string
   password: string
   agentId: string
+  proxyUrl?: string
+  useProxy?: boolean
 }
 
 export interface TourplanTour {
@@ -82,27 +89,94 @@ export class TourplanAPI {
     this.config = config
   }
 
-  private async makeRequest(xmlBody: string, useSoapEndpoint: boolean = false): Promise<any> {
+  private async makeRequest(xmlBody: string, useSoapEndpoint = false): Promise<any> {
     try {
+      // Use proxy if configured
+      if (this.config.useProxy && this.config.proxyUrl) {
+        console.log("Using AWS Lambda proxy for Tourplan request")
+        return await this.makeProxyRequest(xmlBody)
+      }
+
+      // Direct request (original method)
       const url = useSoapEndpoint ? this.config.soapSearchUrl : this.config.baseUrl
+
+      console.log("Making direct request to:", url)
+      console.log("Request body:", xmlBody)
+
       const response = await fetch(url, {
         method: "POST",
         headers: {
-          "Content-Type": "text/xml; charset=utf-8",
-          SOAPAction: "",
+          "Content-Type": "application/xml; charset=utf-8",
+          Accept: "application/xml, text/xml",
+          "Cache-Control": "no-cache",
         },
         body: xmlBody,
       })
 
+      console.log("Response status:", response.status)
+      console.log("Response headers:", Object.fromEntries(response.headers.entries()))
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        const errorText = await response.text()
+        console.error("HTTP error response:", errorText)
+        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`)
       }
 
       const xmlText = await response.text()
+      console.log("Raw XML response:", xmlText)
+
       const result = await parseStringPromise(xmlText)
       return result
     } catch (error) {
       console.error("Tourplan API request failed:", error)
+      throw error
+    }
+  }
+
+  private async makeProxyRequest(xmlBody: string): Promise<any> {
+    try {
+      console.log("Making request through AWS Lambda proxy:", this.config.proxyUrl)
+      console.log("XML body:", xmlBody)
+
+      const response = await fetch(this.config.proxyUrl!, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          xmlBody: xmlBody,
+          targetUrl: this.config.baseUrl,
+          agentId: this.config.agentId,
+        }),
+      })
+
+      console.log("Proxy response status:", response.status)
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error("Proxy error response:", errorText)
+        throw new Error(`Proxy error! status: ${response.status}, body: ${errorText}`)
+      }
+
+      const proxyResponse = await response.json()
+      console.log("Proxy response:", proxyResponse)
+
+      if (!proxyResponse.success) {
+        throw new Error(`Proxy request failed: ${proxyResponse.error || "Unknown error"}`)
+      }
+
+      // Parse the XML response from Tourplan
+      if (proxyResponse.tourplanResponse && proxyResponse.tourplanResponse.body) {
+        const xmlText = proxyResponse.tourplanResponse.body
+        console.log("Raw XML from proxy:", xmlText)
+
+        const result = await parseStringPromise(xmlText)
+        return result
+      } else {
+        throw new Error("No valid response body from proxy")
+      }
+    } catch (error) {
+      console.error("Proxy request failed:", error)
       throw error
     }
   }
@@ -124,14 +198,18 @@ export class TourplanAPI {
     // Support both old format (ButtonName/DestinationName) and new format (Opt/DateFrom/DateTo/RoomConfigs)
     if (params.opt) {
       // New format with Opt, DateFrom, DateTo, RoomConfigs
-      const roomConfigsXML = params.roomConfigs?.map(config =>
-        `      <RoomConfig>
+      const roomConfigsXML =
+        params.roomConfigs
+          ?.map(
+            (config) =>
+              `      <RoomConfig>
         <Adults>${config.adults}</Adults>
         <RoomType>${config.roomType}</RoomType>
-      </RoomConfig>`
-      ).join('\n') || '';
+      </RoomConfig>`,
+          )
+          .join("\n") || ""
 
-      return `<?xml version="1.0"?>
+      return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE Request SYSTEM "hostConnect_5_05_000.dtd">
 <Request>
   <OptionInfoRequest>
@@ -139,14 +217,14 @@ export class TourplanAPI {
     <Password>${params.password}</Password>
     <Opt>${params.opt}</Opt>
     <Info>${params.info}</Info>
-    ${params.dateFrom ? `<DateFrom>${params.dateFrom}</DateFrom>` : ''}
-    ${params.dateTo ? `<DateTo>${params.dateTo}</DateTo>` : ''}
-    ${roomConfigsXML ? `<RoomConfigs>\n${roomConfigsXML}\n    </RoomConfigs>` : ''}
+    ${params.dateFrom ? `<DateFrom>${params.dateFrom}</DateFrom>` : ""}
+    ${params.dateTo ? `<DateTo>${params.dateTo}</DateTo>` : ""}
+    ${roomConfigsXML ? `<RoomConfigs>\n${roomConfigsXML}\n    </RoomConfigs>` : ""}
   </OptionInfoRequest>
 </Request>`
     } else {
       // Original format with ButtonName/DestinationName
-      return `<?xml version="1.0"?>
+      return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE Request SYSTEM "hostConnect_5_05_000.dtd">
 <Request>
   <OptionInfoRequest>
@@ -173,26 +251,26 @@ export class TourplanAPI {
     // Build room configurations based on adults/children
     const adults = params.adults || 2
     const roomType = adults === 1 ? "SG" : "DB" // Single or Double room
-    
+
     // Use a more specific date format and ensure it's in the future
     const searchDate = params.startDate || "2025-07-01"
-    
+
     // Map destination to known Tourplan destinations
     const destinationMapping: Record<string, string> = {
       "cape town": "Cape Town",
-      "johannesburg": "Johannesburg",
-      "durban": "Durban",
-      "kruger": "Kruger National Park",
+      johannesburg: "Johannesburg",
+      durban: "Durban",
+      kruger: "Kruger National Park",
       "garden route": "Garden Route",
-      "stellenbosch": "Stellenbosch",
-      "hermanus": "Hermanus"
+      stellenbosch: "Stellenbosch",
+      hermanus: "Hermanus",
     }
-    
-    const destination = params.destination ?
-      destinationMapping[params.destination.toLowerCase()] || params.destination :
-      "Cape Town"
 
-    return `<?xml version="1.0"?>
+    const destination = params.destination
+      ? destinationMapping[params.destination.toLowerCase()] || params.destination
+      : "Cape Town"
+
+    return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE Request SYSTEM "hostConnect_5_05_000.dtd">
 <Request>
   <OptionInfoRequest>
@@ -229,7 +307,7 @@ export class TourplanAPI {
       // Extract tour options from the reply
       const options = reply.Option || []
       console.log(`Found ${options.length} options in OptionInfoReply`)
-      
+
       if (options.length === 0) {
         console.log("No options found in reply")
         console.log("Reply structure:", JSON.stringify(reply, null, 2))
@@ -241,23 +319,23 @@ export class TourplanAPI {
         let duration = 1
         const durationMatch = (option.$.OptName || option.OptDesc?.[0] || "").match(/(\d+)\s*(day|hour)/i)
         if (durationMatch) {
-          duration = parseInt(durationMatch[1])
-          if (durationMatch[2].toLowerCase() === 'hour' && duration < 24) {
+          duration = Number.parseInt(durationMatch[1])
+          if (durationMatch[2].toLowerCase() === "hour" && duration < 24) {
             duration = 1 // Convert hours to days, minimum 1 day
           }
         }
 
         // Parse price and ensure it's a valid number
         const priceStr = option.$.OptPrice || option.$.Price || "0"
-        const price = parseFloat(priceStr.replace(/[^\d.-]/g, '')) || 0
+        const price = Number.parseFloat(priceStr.replace(/[^\d.-]/g, "")) || 0
 
         // Determine tour level based on price or name
         let tourLevel = "standard"
         if (price > 2000) tourLevel = "luxury"
         else if (price < 500) tourLevel = "basic"
-        
+
         const tourName = option.$.OptName || option.$.OptCode || `Tour ${index + 1}`
-        if (tourName.toLowerCase().includes('luxury') || tourName.toLowerCase().includes('premium')) {
+        if (tourName.toLowerCase().includes("luxury") || tourName.toLowerCase().includes("premium")) {
           tourLevel = "luxury"
         }
 
@@ -278,8 +356,8 @@ export class TourplanAPI {
           destination: destination,
           country: country,
           availability: (option.$.Avail as "OK" | "RQ" | "NO") || "OK",
-          maxParticipants: parseInt(option.$.MaxPax || option.$.MaxParticipants || "0") || undefined,
-          minParticipants: parseInt(option.$.MinPax || option.$.MinParticipants || "1") || 1,
+          maxParticipants: Number.parseInt(option.$.MaxPax || option.$.MaxParticipants || "0") || undefined,
+          minParticipants: Number.parseInt(option.$.MinPax || option.$.MinParticipants || "1") || 1,
           cancellationDeadline: option.$.CancelDeadline || undefined,
           extras: [], // Will be populated separately if needed
         }
@@ -338,13 +416,13 @@ export class TourplanAPI {
         info: params.info,
         dateFrom: params.dateFrom,
         dateTo: params.dateTo,
-        roomConfigs: params.roomConfigs
+        roomConfigs: params.roomConfigs,
       })
-      
+
       console.log("Sending OptionInfoRequest:", xmlBody)
       const xmlResponse = await this.makeRequest(xmlBody)
       console.log("OptionInfoRequest response:", JSON.stringify(xmlResponse, null, 2))
-      
+
       return this.parseOptionInfoData(xmlResponse)
     } catch (error) {
       console.error("Tourplan OptionInfo API failed, falling back to mock data:", error)
@@ -359,28 +437,28 @@ export class TourplanAPI {
       if (reply) {
         return {
           success: true,
-          data: reply
+          data: reply,
         }
       }
-      
+
       // Check for error response
       const errorReply = xmlData?.Request?.ErrorReply?.[0]
       if (errorReply) {
         return {
           success: false,
-          error: errorReply.Error?.[0] || "Unknown error"
+          error: errorReply.Error?.[0] || "Unknown error",
         }
       }
-      
+
       return {
         success: false,
-        error: "Unexpected response format"
+        error: "Unexpected response format",
       }
     } catch (error) {
       console.error("Error parsing OptionInfo data:", error)
       return {
         success: false,
-        error: "Failed to parse response"
+        error: "Failed to parse response",
       }
     }
   }
@@ -397,7 +475,7 @@ export class TourplanAPI {
       roomType: string
     }>
   }): any {
-    const identifier = params.opt || params.destinationName || "unknown";
+    const identifier = params.opt || params.destinationName || "unknown"
     return {
       success: true,
       data: {
@@ -409,8 +487,8 @@ export class TourplanAPI {
         dateTo: params.dateTo,
         roomConfigs: params.roomConfigs,
         description: `Mock option info for ${identifier}`,
-        details: "This is mock data returned when Tourplan API is not configured"
-      }
+        details: "This is mock data returned when Tourplan API is not configured",
+      },
     }
   }
 
@@ -423,7 +501,7 @@ export class TourplanAPI {
       available: true,
       spaces: 10,
       price: 1200,
-      currency: "USD"
+      currency: "USD",
     }
   }
 
@@ -443,9 +521,11 @@ export class TourplanAPI {
       hasUsername: !!this.config.username,
       hasPassword: !!this.config.password,
       hasAgentId: !!this.config.agentId,
-      baseUrl: this.config.baseUrl
+      baseUrl: this.config.baseUrl,
+      useProxy: this.config.useProxy,
+      proxyUrl: this.config.proxyUrl,
     })
-    
+
     const cacheKey = CacheManager.getTourCacheKey(
       params.country || "all",
       params.destination || "all",
@@ -466,18 +546,18 @@ export class TourplanAPI {
       const xmlBody = this.buildSearchXML(params)
       console.log("Sending Tourplan OptionInfo Search request...")
       console.log("XML Request:", xmlBody)
-      
+
       const xmlResponse = await this.makeRequest(xmlBody, false)
       console.log("Tourplan OptionInfo Search response received")
       console.log("XML Response:", JSON.stringify(xmlResponse, null, 2))
-      
+
       const tours = this.parseTourData(xmlResponse)
       console.log(`Parsed ${tours.length} tours from Tourplan API`)
 
       // If we got real data from Tourplan, use it regardless of count
       if (tours.length > 0) {
         console.log(`Successfully retrieved ${tours.length} tours from Tourplan API`)
-        
+
         // Try to cache the results
         try {
           await CacheManager.set(cacheKey, tours, 300)
@@ -491,30 +571,30 @@ export class TourplanAPI {
 
       // If no tours found, try different search strategies
       console.log("No tours found with current search, trying broader search...")
-      
+
       // Try a broader search with just destination
       if (params.destination) {
         const broaderParams = {
           destination: params.destination,
           startDate: params.startDate || "2025-07-01",
-          adults: params.adults || 2
+          adults: params.adults || 2,
         }
-        
+
         const broaderXml = this.buildSearchXML(broaderParams)
         console.log("Trying broader search with destination only...")
-        
+
         const broaderResponse = await this.makeRequest(broaderXml, false)
         const broaderTours = this.parseTourData(broaderResponse)
-        
+
         if (broaderTours.length > 0) {
           console.log(`Found ${broaderTours.length} tours with broader search`)
-          
+
           try {
             await CacheManager.set(cacheKey, broaderTours, 300)
           } catch (error) {
             console.warn("Cache set failed for broader search:", error)
           }
-          
+
           return broaderTours
         }
       }
@@ -524,7 +604,6 @@ export class TourplanAPI {
       const mockTours = this.getMockTours(params)
       console.log(`Returning ${mockTours.length} mock tours as fallback`)
       return mockTours
-
     } catch (error) {
       console.error("Tourplan API request failed:", error)
       console.log("Falling back to mock data due to API error")
@@ -677,17 +756,17 @@ export class TourplanAPI {
     let filteredTours = mockTours
 
     // Only apply filters if search parameters are provided and not empty
-    if (params.country && params.country.trim() !== '') {
+    if (params.country && params.country.trim() !== "") {
       filteredTours = filteredTours.filter((tour) => tour.country.toLowerCase().includes(params.country!.toLowerCase()))
     }
 
-    if (params.destination && params.destination.trim() !== '') {
+    if (params.destination && params.destination.trim() !== "") {
       filteredTours = filteredTours.filter((tour) =>
         tour.destination.toLowerCase().includes(params.destination!.toLowerCase()),
       )
     }
 
-    if (params.tourLevel && params.tourLevel.trim() !== '') {
+    if (params.tourLevel && params.tourLevel.trim() !== "") {
       filteredTours = filteredTours.filter((tour) => tour.tourLevel === params.tourLevel)
     }
 
@@ -729,10 +808,13 @@ export function getTourplanAPI(): TourplanAPI {
   if (!tourplanAPI) {
     const config: TourplanConfig = {
       baseUrl: process.env.TOURPLAN_API_URL || "https://pa-thisis.nx.tourplan.net/hostconnect_test/api/hostConnectApi",
-      soapSearchUrl: process.env.TOURPLAN_SOAP_SEARCH_URL || "https://pa-thisis.nx.tourplan.net/hostconnect_test/api/hostConnectApi",
+      soapSearchUrl:
+        process.env.TOURPLAN_SOAP_SEARCH_URL || "https://pa-thisis.nx.tourplan.net/hostconnect_test/api/hostConnectApi",
       username: process.env.TOURPLAN_USERNAME || "SAMAGT",
       password: process.env.TOURPLAN_PASSWORD || "S@MAgt01",
       agentId: process.env.TOURPLAN_AGENT_ID || "SAMAGT",
+      proxyUrl: process.env.TOURPLAN_PROXY_URL,
+      useProxy: process.env.USE_TOURPLAN_PROXY === "true",
     }
     tourplanAPI = new TourplanAPI(config)
   }

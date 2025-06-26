@@ -1,50 +1,59 @@
-import { TourplanAPIDebug } from "@/lib/tourplan-api-debug"
+// Force Node.js runtime instead of Edge
+export const runtime = "nodejs"
+
+import { NextResponse } from "next/server"
+import { getTourplanAPI } from "@/lib/tourplan-api"
 
 export async function GET() {
   try {
-    const config = {
-      baseUrl: process.env.TOURPLAN_API_URL || "",
-      username: process.env.TOURPLAN_USERNAME || "",
-      password: process.env.TOURPLAN_PASSWORD || "",
-      agentId: process.env.TOURPLAN_AGENT_ID || "",
+    console.log("=== TOURPLAN API TEST (Node.js Runtime) ===")
+
+    const envCheck = {
+      apiUrl: !!process.env.TOURPLAN_API_URL,
+      username: !!process.env.TOURPLAN_USERNAME,
+      password: !!process.env.TOURPLAN_PASSWORD,
+      agentId: !!process.env.TOURPLAN_AGENT_ID,
     }
 
-    console.log("Environment variables check:")
-    console.log("TOURPLAN_API_URL:", config.baseUrl ? "✓ Set" : "✗ Missing")
-    console.log("TOURPLAN_USERNAME:", config.username ? "✓ Set" : "✗ Missing")
-    console.log("TOURPLAN_PASSWORD:", config.password ? "✓ Set" : "✗ Missing")
-    console.log("TOURPLAN_AGENT_ID:", config.agentId ? "✓ Set" : "✗ Missing")
+    const tourplanAPI = getTourplanAPI()
 
-    const debugAPI = new TourplanAPIDebug(config)
+    let connectionResult
+    let searchResult
 
-    // Test basic connection
-    const connectionTest = await debugAPI.testConnection()
-    console.log("Connection test result:", connectionTest)
-
-    // If connection works, test search
-    let searchTest = null
-    if (connectionTest.success) {
-      searchTest = await debugAPI.testSearch()
-      console.log("Search test result:", searchTest)
+    try {
+      connectionResult = await tourplanAPI.getOptionInfo({
+        buttonName: "Day Tours",
+        destinationName: "Cape Town",
+        info: "G",
+      })
+    } catch (error) {
+      connectionResult = { error: error instanceof Error ? error.message : "Unknown error" }
     }
 
-    return Response.json({
+    try {
+      searchResult = await tourplanAPI.searchTours({
+        destination: "Cape Town",
+        country: "South Africa",
+        adults: 2,
+      })
+    } catch (error) {
+      searchResult = { error: error instanceof Error ? error.message : "Unknown error" }
+    }
+
+    return NextResponse.json({
+      success: true,
+      runtime: "nodejs",
       timestamp: new Date().toISOString(),
-      environment: {
-        hasApiUrl: !!config.baseUrl,
-        hasUsername: !!config.username,
-        hasPassword: !!config.password,
-        hasAgentId: !!config.agentId,
-      },
-      connectionTest,
-      searchTest,
+      environment: envCheck,
+      connectionTest: connectionResult,
+      searchTest: searchResult,
     })
   } catch (error) {
-    console.error("Tourplan test failed:", error)
-    return Response.json(
+    console.error("Test failed:", error)
+    return NextResponse.json(
       {
         error: "Test failed",
-        details: error instanceof Error ? error.message : "Unknown error",
+        message: error instanceof Error ? error.message : "Unknown error",
         timestamp: new Date().toISOString(),
       },
       { status: 500 },

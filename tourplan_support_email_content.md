@@ -22,7 +22,7 @@ I am trying to implement tour search functionality and have been attempting to u
 ## Error Details
 
 ### Request Sent:
-```xml
+\`\`\`xml
 <?xml version="1.0" encoding="utf-8"?>
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
   <soap:Header>
@@ -40,10 +40,10 @@ I am trying to implement tour search functionality and have been attempting to u
     </SearchTours>
   </soap:Body>
 </soap:Envelope>
-```
+\`\`\`
 
 ### Error Response:
-```xml
+\`\`\`xml
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE Reply SYSTEM "hostConnect_5_05_000.dtd">
 <Reply>
@@ -52,7 +52,7 @@ I am trying to implement tour search functionality and have been attempting to u
     (&lt;Envelope xmlns='http://schemas.xmlsoap.org/soap/envelope/'&gt; was not expected.)</Error>
   </ErrorReply>
 </Reply>
-```
+\`\`\`
 
 ## Questions
 

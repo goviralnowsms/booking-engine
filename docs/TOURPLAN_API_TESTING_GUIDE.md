@@ -33,17 +33,17 @@ Your booking engine integrates with the Tourplan HostConnect API (Version 5.05.0
 - **Test:** Run `python verify_ip.py` to confirm your current IP is whitelisted
 
 ### 2. Authentication Credentials
-```env
+\`\`\`env
 TOURPLAN_API_URL=https://pa-thisis.nx.tourplan.net/hostconnect_test/api/hostConnectApi
 TOURPLAN_USERNAME=your_username
 TOURPLAN_PASSWORD=your_password
 TOURPLAN_AGENT_ID=SAMAGT
-```
+\`\`\`
 
 ### 3. Development Server
-```bash
+\`\`\`bash
 npm run dev
-```
+\`\`\`
 Server should be running on `http://localhost:3000`
 
 ## ⚙️ API Configuration
@@ -51,7 +51,7 @@ Server should be running on `http://localhost:3000`
 ### Environment Variables
 Create/update your `.env.local` file:
 
-```env
+\`\`\`env
 # Tourplan API Configuration
 TOURPLAN_API_URL=https://pa-thisis.nx.tourplan.net/hostconnect_test/api/hostConnectApi
 TOURPLAN_USERNAME=your_username
@@ -61,7 +61,7 @@ TOURPLAN_AGENT_ID=SAMAGT
 # Testing Configuration
 USE_MOCKS=true  # Set to false for live API testing
 NODE_ENV=development
-```
+\`\`\`
 
 ### API Client Configuration
 The API client is configured in [`lib/tourplan-api.ts`](../lib/tourplan-api.ts) with:
@@ -75,9 +75,9 @@ The API client is configured in [`lib/tourplan-api.ts`](../lib/tourplan-api.ts) 
 ### Method 1: Python Test Script
 **File:** [`test_tourplan_api.py`](../test_tourplan_api.py)
 
-```bash
+\`\`\`bash
 python test_tourplan_api.py
-```
+\`\`\`
 
 **Features:**
 - Authentication testing
@@ -96,7 +96,7 @@ python test_tourplan_api.py
 ### Method 3: Direct API Testing
 Using your Next.js API routes:
 
-```bash
+\`\`\`bash
 # Test database connection
 curl http://localhost:3000/api/test-db
 
@@ -104,7 +104,7 @@ curl http://localhost:3000/api/test-db
 curl -X POST http://localhost:3000/api/tours/search \
   -H "Content-Type: application/json" \
   -d '{"destination": "Cape Town", "adults": 2}'
-```
+\`\`\`
 
 ## 🎯 API Endpoints
 
@@ -112,7 +112,7 @@ curl -X POST http://localhost:3000/api/tours/search \
 **Endpoint:** `POST /api/tours/search`
 
 **Request:**
-```json
+\`\`\`json
 {
   "destination": "Cape Town",
   "country": "South Africa",
@@ -122,10 +122,10 @@ curl -X POST http://localhost:3000/api/tours/search \
   "adults": 2,
   "children": 0
 }
-```
+\`\`\`
 
 **Response:**
-```json
+\`\`\`json
 {
   "tours": [
     {
@@ -140,26 +140,26 @@ curl -X POST http://localhost:3000/api/tours/search \
     }
   ]
 }
-```
+\`\`\`
 
 ### 2. Tour Availability
 **Endpoint:** `POST /api/tours/availability`
 
 **Request:**
-```json
+\`\`\`json
 {
   "tourId": "tour-001",
   "date": "2024-07-01",
   "adults": 2,
   "children": 0
 }
-```
+\`\`\`
 
 ### 3. Create Booking
 **Endpoint:** `POST /api/bookings/create`
 
 **Request:**
-```json
+\`\`\`json
 {
   "tourId": "tour-001",
   "startDate": "2024-07-01",
@@ -176,15 +176,15 @@ curl -X POST http://localhost:3000/api/tours/search \
   },
   "createAsProvisional": true
 }
-```
+\`\`\`
 
 ## 🔬 Test Scenarios
 
 ### Scenario 1: Basic Authentication Test
-```python
+\`\`\`python
 # Run the authentication test
 python test_tourplan_api.py
-```
+\`\`\`
 
 **Expected Results:**
 - ✅ Connection successful
@@ -192,12 +192,12 @@ python test_tourplan_api.py
 - ✅ Agent info retrieved
 
 ### Scenario 2: Tour Search Test
-```bash
+\`\`\`bash
 # Test with web interface
 # 1. Open test-api-interface.html
 # 2. Use "Tour Search" endpoint
 # 3. Modify search criteria
-```
+\`\`\`
 
 **Test Cases:**
 - Search by destination
@@ -207,13 +207,13 @@ python test_tourplan_api.py
 - Empty search (should return all tours)
 
 ### Scenario 3: Error Handling Test
-```json
+\`\`\`json
 // Invalid tour ID
 {
   "tourId": "INVALID_TOUR",
   "date": "2024-07-01"
 }
-```
+\`\`\`
 
 **Expected Results:**
 - Graceful error handling
@@ -260,7 +260,7 @@ python test_tourplan_api.py
 
 ### Debug Commands
 
-```bash
+\`\`\`bash
 # Check VPN and IP
 python verify_ip.py
 
@@ -272,7 +272,7 @@ node -e "console.log(process.env.TOURPLAN_API_URL)"
 
 # Test local API endpoints
 curl http://localhost:3000/api/test-db
-```
+\`\`\`
 
 ## 🎭 Mock vs Live Testing
 
@@ -280,9 +280,9 @@ curl http://localhost:3000/api/test-db
 **When to use:** Development, testing, when API is unavailable
 
 **Configuration:**
-```env
+\`\`\`env
 USE_MOCKS=true
-```
+\`\`\`
 
 **Features:**
 - Instant responses
@@ -294,13 +294,13 @@ USE_MOCKS=true
 **When to use:** Integration testing, production validation
 
 **Configuration:**
-```env
+\`\`\`env
 USE_MOCKS=false
 TOURPLAN_API_URL=https://pa-thisis.nx.tourplan.net/hostconnect_test/api/hostConnectApi
 TOURPLAN_USERNAME=your_username
 TOURPLAN_PASSWORD=your_password
 TOURPLAN_AGENT_ID=SAMAGT
-```
+\`\`\`
 
 **Requirements:**
 - VPN connection to South Africa
@@ -324,26 +324,26 @@ TOURPLAN_AGENT_ID=SAMAGT
 ## 🚀 Quick Start Testing
 
 1. **Setup Environment**
-   ```bash
+   \`\`\`bash
    # Copy environment template
    cp .env.example .env.local
    # Edit with your credentials
-   ```
+   \`\`\`
 
 2. **Start Development Server**
-   ```bash
+   \`\`\`bash
    npm run dev
-   ```
+   \`\`\`
 
 3. **Test Basic Connectivity**
-   ```bash
+   \`\`\`bash
    python test_tourplan_api.py
-   ```
+   \`\`\`
 
 4. **Open Web Testing Interface**
-   ```
+   \`\`\`
    http://localhost:3000/test-api-interface.html
-   ```
+   \`\`\`
 
 5. **Run Test Scenarios**
    - Test each endpoint

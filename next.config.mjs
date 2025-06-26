@@ -9,6 +9,10 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // Add experimental features for better compatibility
+  experimental: {
+    serverComponentsExternalPackages: ['xml2js'],
+  },
 }
 
 export default nextConfig

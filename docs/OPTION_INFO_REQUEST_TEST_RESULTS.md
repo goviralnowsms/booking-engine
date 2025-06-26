@@ -12,7 +12,7 @@
 
 Your OptionInfoRequest XML format:
 
-```xml
+\`\`\`xml
 <OptionInfoRequest>
   <AgentID>agent_id</AgentID>
   <Password>password</Password>
@@ -27,7 +27,7 @@ Your OptionInfoRequest XML format:
     </RoomConfig>
   </RoomConfigs>
 </OptionInfoRequest>
-```
+\`\`\`
 
 ## Test Results
 
@@ -95,16 +95,16 @@ Your OptionInfoRequest XML format:
 The local API now supports both formats:
 
 ### Old Format (ButtonName/DestinationName)
-```json
+\`\`\`json
 {
   "buttonName": "service_button",
   "destinationName": "Cape Town", 
   "info": "G"
 }
-```
+\`\`\`
 
 ### New Format (Opt/DateFrom/DateTo/RoomConfigs)
-```json
+\`\`\`json
 {
   "opt": "option_identifier",
   "info": "GS",
@@ -117,7 +117,7 @@ The local API now supports both formats:
     }
   ]
 }
-```
+\`\`\`
 
 ## Next Steps
 

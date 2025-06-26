@@ -44,14 +44,14 @@ You have a **static IP address** that is whitelisted with Tourplan, but connecti
 ## 🧪 Testing Your Current Setup
 
 ### Step 1: Check Your Current IP
-```bash
+\`\`\`bash
 python verify_ip.py
-```
+\`\`\`
 
 ### Step 2: Test API Connectivity
-```bash
+\`\`\`bash
 python test_tourplan_api.py
-```
+\`\`\`
 
 ### Step 3: Use Web Dashboard
 Visit: `http://localhost:3000/api-testing`
@@ -109,7 +109,7 @@ Visit: `http://localhost:3000/api-testing`
 
 ## 🚀 Quick Commands
 
-```bash
+\`\`\`bash
 # Check current IP and status
 python verify_ip.py
 
@@ -121,7 +121,7 @@ python test_tourplan_complete.py
 
 # Open web dashboard
 # Visit: http://localhost:3000/api-testing
-```
+\`\`\`
 
 ## 📋 Checklist
 

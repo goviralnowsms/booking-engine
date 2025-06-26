@@ -31,10 +31,10 @@ I have successfully implemented HostConnect XML API functionality (AgentInfo, Op
 ## Initial Confusion (Resolved)
 
 Initially, I was sending SOAP requests to the HostConnect XML endpoint and receiving format errors:
-```xml
+\`\`\`xml
 <Error>1000 SCN System.InvalidOperationException: There is an error in XML document (2, 2). 
 (&lt;Envelope xmlns='http://schemas.xmlsoap.org/soap/envelope/'&gt; was not expected.)</Error>
-```
+\`\`\`
 
 This has been resolved - I now understand there are separate endpoints for different API formats.
 
@@ -43,7 +43,7 @@ This has been resolved - I now understand there are separate endpoints for diffe
 **Primary Request:** Please whitelist IP address **84.46.231.251** for the **SOAP Search API endpoint**
 
 **Expected SOAP Request Format:**
-```xml
+\`\`\`xml
 <?xml version="1.0" encoding="utf-8"?>
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
   <soap:Header>
@@ -61,7 +61,7 @@ This has been resolved - I now understand there are separate endpoints for diffe
     </SearchTours>
   </soap:Body>
 </soap:Envelope>
-```
+\`\`\`
 
 ## Questions for Clarification
 

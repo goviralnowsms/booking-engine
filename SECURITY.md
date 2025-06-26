@@ -28,26 +28,26 @@ This document outlines security best practices for handling Stripe API keys and 
 ## 🧪 Development vs Production
 
 ### Development Environment
-```env
+\`\`\`env
 # Use test keys for development
 STRIPE_API_KEY=sk_test_your_actual_test_key
 STRIPE_PUBLIC_KEY=pk_test_your_actual_test_key
-```
+\`\`\`
 
 ### Production Environment
-```env
+\`\`\`env
 # Use live keys for production
 STRIPE_API_KEY=sk_live_your_actual_live_key
 STRIPE_PUBLIC_KEY=pk_live_your_actual_live_key
-```
+\`\`\`
 
 ## 🔍 Security Validation
 
 Run the security validation script regularly:
 
-```bash
+\`\`\`bash
 npm run validate-stripe
-```
+\`\`\`
 
 This script checks:
 - ✅ Environment variables are set

@@ -1,6 +1,6 @@
-'use client'
+"use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect } from "react"
 
 interface TestResult {
   test: string
@@ -11,26 +11,27 @@ interface TestResult {
 }
 
 interface StatusState {
-  server: 'online' | 'offline' | 'unknown'
-  vpn: 'connected' | 'disconnected' | 'unknown'
-  api: 'working' | 'error' | 'unknown'
-  auth: 'success' | 'failed' | 'not-tested'
+  server: "online" | "offline" | "unknown"
+  proxy: "working" | "error" | "unknown"
+  api: "working" | "error" | "unknown"
+  auth: "success" | "failed" | "not-tested"
 }
 
 export default function APITestingDashboard() {
   const [status, setStatus] = useState<StatusState>({
-    server: 'unknown',
-    vpn: 'unknown',
-    api: 'unknown',
-    auth: 'not-tested'
+    server: "unknown",
+    proxy: "unknown",
+    api: "unknown",
+    auth: "not-tested",
   })
-  
+
   const [logs, setLogs] = useState<string[]>([])
   const [testResults, setTestResults] = useState<{ [key: string]: TestResult | null }>({})
   const [config, setConfig] = useState({
-    baseUrl: 'http://localhost:3000',
-    useMocks: false, // Changed to false to use live API by default
-    timeout: 30000
+    baseUrl: "http://localhost:3000",
+    useMocks: false,
+    useProxy: true, // Default to using proxy
+    timeout: 30000,
   })
 
   // Sample data templates
@@ -42,13 +43,13 @@ export default function APITestingDashboard() {
       startDate: "2024-07-01",
       endDate: "2024-07-03",
       adults: 2,
-      children: 0
+      children: 0,
     },
     availability: {
       tourId: "tour-001",
       date: "2024-07-01",
       adults: 2,
-      children: 0
+      children: 0,
     },
     booking: {
       tourId: "tour-001",
@@ -62,21 +63,21 @@ export default function APITestingDashboard() {
         lastName: "Doe",
         email: "john.doe@example.com",
         phone: "+27123456789",
-        address: "123 Main St, Cape Town"
+        address: "123 Main St, Cape Town",
       },
-      createAsProvisional: true
+      createAsProvisional: true,
     },
     payment: {
       amount: 150000,
       currency: "ZAR",
       bookingId: "booking-001",
-      paymentMethod: "card"
+      paymentMethod: "card",
     },
     tourplanOptionInfo: {
       old: {
         buttonName: "SAMAGT",
         destinationName: "Cape Town",
-        info: "G"
+        info: "G",
       },
       new: {
         opt: "SAMAGT",
@@ -86,13 +87,13 @@ export default function APITestingDashboard() {
         roomConfigs: [
           {
             adults: 2,
-            roomType: "DB"
-          }
-        ]
+            roomType: "DB",
+          },
+        ],
       },
       generalSearch: {
         opt: "SAMAGT",
-        info: "GS"
+        info: "GS",
       },
       stayPricing: {
         opt: "SAMAGT",
@@ -102,9 +103,9 @@ export default function APITestingDashboard() {
         roomConfigs: [
           {
             adults: 2,
-            roomType: "DB"
-          }
-        ]
+            roomType: "DB",
+          },
+        ],
       },
       availability: {
         opt: "SAMAGT",
@@ -114,9 +115,9 @@ export default function APITestingDashboard() {
         roomConfigs: [
           {
             adults: 2,
-            roomType: "DB"
-          }
-        ]
+            roomType: "DB",
+          },
+        ],
       },
       rates: {
         opt: "SAMAGT",
@@ -126,159 +127,186 @@ export default function APITestingDashboard() {
         roomConfigs: [
           {
             adults: 2,
-            roomType: "DB"
-          }
-        ]
-      }
-    }
+            roomType: "DB",
+          },
+        ],
+      },
+    },
   }
 
   const addLog = (message: string) => {
     const timestamp = new Date().toISOString()
-    setLogs(prev => [...prev, `[${timestamp}] ${message}`])
+    setLogs((prev) => [...prev, `[${timestamp}] ${message}`])
   }
 
   const checkServerStatus = async () => {
     try {
-      const response = await fetch('/api/test-db')
+      const response = await fetch("/api/test-db")
       if (response.ok) {
-        setStatus(prev => ({ ...prev, server: 'online' }))
-        addLog('✅ Local server is online')
+        setStatus((prev) => ({ ...prev, server: "online" }))
+        addLog("✅ Local server is online")
       } else {
         throw new Error(`Server responded with ${response.status}`)
       }
     } catch (error) {
-      setStatus(prev => ({ ...prev, server: 'offline' }))
+      setStatus((prev) => ({ ...prev, server: "offline" }))
       addLog(`❌ Local server check failed: ${error}`)
     }
   }
 
+  const testProxy = async () => {
+    try {
+      addLog("🔄 Testing AWS Lambda proxy...")
+      const response = await fetch("/api/test-proxy", { method: "POST" })
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        setStatus((prev) => ({ ...prev, proxy: "working" }))
+        addLog("✅ AWS Lambda proxy is working")
+
+        // Check if we got a successful Tourplan response
+        if (data.response?.success) {
+          setStatus((prev) => ({ ...prev, api: "working", auth: "success" }))
+          addLog("✅ Tourplan API accessible through proxy")
+        } else {
+          addLog(`⚠️ Proxy works but Tourplan returned: ${data.response?.error || "Unknown error"}`)
+        }
+      } else {
+        throw new Error(data.error || "Proxy test failed")
+      }
+    } catch (error) {
+      setStatus((prev) => ({ ...prev, proxy: "error" }))
+      addLog(`❌ Proxy test failed: ${error}`)
+    }
+  }
+
   const makeRequest = async (endpoint: string, method: string, payload?: any) => {
-    const testKey = endpoint.replace(/\//g, '-').replace(/^-/, '')
-    
+    const testKey = endpoint.replace(/\//g, "-").replace(/^-/, "")
+
     try {
       addLog(`🔄 ${method} ${endpoint} - Request started`)
-      
+
       const options: RequestInit = {
         method: method,
         headers: {
-          'Content-Type': 'application/json',
-        }
+          "Content-Type": "application/json",
+        },
       }
-      
-      if (payload && method !== 'GET') {
+
+      if (payload && method !== "GET") {
         options.body = JSON.stringify(payload)
       }
-      
+
       const startTime = Date.now()
       const response = await fetch(endpoint, options)
       const endTime = Date.now()
       const duration = endTime - startTime
-      
+
       const data = await response.text()
       let parsedData
-      
+
       try {
         parsedData = JSON.parse(data)
       } catch (e) {
         parsedData = data
       }
-      
+
       const result: TestResult = {
         test: endpoint,
         success: response.ok,
-        message: response.ok ? 'Success' : `Error ${response.status}`,
+        message: response.ok ? "Success" : `Error ${response.status}`,
         timestamp: new Date().toISOString(),
-        responseTime: duration
+        responseTime: duration,
       }
-      
-      setTestResults(prev => ({ ...prev, [testKey]: result }))
-      
+
+      setTestResults((prev) => ({ ...prev, [testKey]: result }))
+
       if (response.ok) {
         addLog(`✅ ${method} ${endpoint} - Success (${response.status}) in ${duration}ms`)
       } else {
         addLog(`❌ ${method} ${endpoint} - Error (${response.status}) in ${duration}ms`)
       }
-      
+
       return { success: response.ok, data: parsedData, status: response.status }
-      
     } catch (error) {
       const result: TestResult = {
         test: endpoint,
         success: false,
         message: `Network error: ${error}`,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       }
-      
-      setTestResults(prev => ({ ...prev, [testKey]: result }))
+
+      setTestResults((prev) => ({ ...prev, [testKey]: result }))
       addLog(`❌ ${method} ${endpoint} - Network error: ${error}`)
-      
+
       return { success: false, error: error }
     }
   }
 
-  const testDatabase = () => makeRequest('/api/test-db', 'GET')
-  const testTourSearch = (payload: any) => makeRequest('/api/tours/search', 'POST', payload)
-  const testAvailability = (payload: any) => makeRequest('/api/tours/availability', 'POST', payload)
-  const testCreateBooking = (payload: any) => makeRequest('/api/bookings/create', 'POST', payload)
-  const testPayment = (payload: any) => makeRequest('/api/payments/process', 'POST', payload)
-  const testTourplanOptionInfo = (payload: any) => makeRequest('/api/tourplan/option-info', 'POST', payload)
+  const testDatabase = () => makeRequest("/api/test-db", "GET")
+  const testTourSearch = (payload: any) => makeRequest("/api/tours/search", "POST", payload)
+  const testAvailability = (payload: any) => makeRequest("/api/tours/availability", "POST", payload)
+  const testCreateBooking = (payload: any) => makeRequest("/api/bookings/create", "POST", payload)
+  const testPayment = (payload: any) => makeRequest("/api/payments/process", "POST", payload)
+  const testTourplanOptionInfo = (payload: any) => makeRequest("/api/tourplan/option-info", "POST", payload)
 
   const clearLogs = () => {
     setLogs([])
-    addLog('Dashboard initialized')
+    addLog("Dashboard initialized")
   }
 
   const exportLogs = () => {
-    const logsText = logs.join('\n')
-    const blob = new Blob([logsText], { type: 'text/plain' })
+    const logsText = logs.join("\n")
+    const blob = new Blob([logsText], { type: "text/plain" })
     const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
+    const a = document.createElement("a")
     a.href = url
     a.download = `tourplan-api-test-logs-${new Date().toISOString().slice(0, 19)}.txt`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
-    addLog('📁 Logs exported to file')
+    addLog("📁 Logs exported to file")
   }
 
   useEffect(() => {
     checkServerStatus()
-    addLog('Dashboard initialized')
+    addLog("Dashboard initialized")
   }, [])
 
   const getStatusColor = (statusType: keyof StatusState) => {
     const statusValue = status[statusType]
     switch (statusValue) {
-      case 'online':
-      case 'connected':
-      case 'working':
-      case 'success':
-        return 'bg-green-500'
-      case 'offline':
-      case 'disconnected':
-      case 'error':
-      case 'failed':
-        return 'bg-red-500'
+      case "online":
+      case "working":
+      case "success":
+        return "bg-green-500"
+      case "offline":
+      case "error":
+      case "failed":
+        return "bg-red-500"
       default:
-        return 'bg-gray-500'
+        return "bg-gray-500"
     }
   }
 
   const getStatusText = (statusType: keyof StatusState) => {
     const statusValue = status[statusType]
     switch (statusType) {
-      case 'server':
-        return statusValue === 'online' ? 'Online and ready' : statusValue === 'offline' ? 'Offline or unreachable' : 'Checking...'
-      case 'vpn':
-        return 'Check manually'
-      case 'api':
-        return 'Test with auth button'
-      case 'auth':
-        return statusValue === 'success' ? 'Authenticated' : statusValue === 'failed' ? 'Failed' : 'Not tested'
+      case "server":
+        return statusValue === "online"
+          ? "Online and ready"
+          : statusValue === "offline"
+            ? "Offline or unreachable"
+            : "Checking..."
+      case "proxy":
+        return statusValue === "working" ? "AWS proxy working" : statusValue === "error" ? "Proxy failed" : "Not tested"
+      case "api":
+        return statusValue === "working" ? "Tourplan accessible" : statusValue === "error" ? "API failed" : "Not tested"
+      case "auth":
+        return statusValue === "success" ? "Authenticated" : statusValue === "failed" ? "Failed" : "Not tested"
       default:
-        return 'Unknown'
+        return "Unknown"
     }
   }
 
@@ -287,11 +315,9 @@ export default function APITestingDashboard() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-8 text-center">
-          <h1 className="text-4xl font-bold text-gray-800 mb-4">
-            🧪 Tourplan API Testing Dashboard
-          </h1>
+          <h1 className="text-4xl font-bold text-gray-800 mb-4">🧪 Tourplan API Testing Dashboard</h1>
           <p className="text-gray-600 text-lg">
-            Comprehensive testing interface for Tourplan HostConnect API integration
+            Comprehensive testing interface for Tourplan HostConnect API integration via AWS Lambda Proxy
           </p>
         </div>
 
@@ -300,10 +326,10 @@ export default function APITestingDashboard() {
           <h2 className="text-2xl font-bold text-gray-800 mb-6">System Status</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { key: 'server' as keyof StatusState, title: 'Local Server' },
-              { key: 'vpn' as keyof StatusState, title: 'VPN Connection' },
-              { key: 'api' as keyof StatusState, title: 'Tourplan API' },
-              { key: 'auth' as keyof StatusState, title: 'Authentication' }
+              { key: "server" as keyof StatusState, title: "Local Server" },
+              { key: "proxy" as keyof StatusState, title: "AWS Lambda Proxy" },
+              { key: "api" as keyof StatusState, title: "Tourplan API" },
+              { key: "auth" as keyof StatusState, title: "Authentication" },
             ].map(({ key, title }) => (
               <div key={key} className={`p-4 rounded-xl text-white text-center ${getStatusColor(key)}`}>
                 <h3 className="font-semibold text-lg">{title}</h3>
@@ -316,13 +342,13 @@ export default function APITestingDashboard() {
         {/* Configuration Panel */}
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
           <h2 className="text-2xl font-bold text-gray-800 mb-6">API Configuration</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">API URL:</label>
               <input
                 type="text"
                 value={config.baseUrl}
-                onChange={(e) => setConfig(prev => ({ ...prev, baseUrl: e.target.value }))}
+                onChange={(e) => setConfig((prev) => ({ ...prev, baseUrl: e.target.value }))}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
@@ -330,11 +356,22 @@ export default function APITestingDashboard() {
               <label className="block text-sm font-medium text-gray-700 mb-2">Use Mock Data:</label>
               <select
                 value={config.useMocks.toString()}
-                onChange={(e) => setConfig(prev => ({ ...prev, useMocks: e.target.value === 'true' }))}
+                onChange={(e) => setConfig((prev) => ({ ...prev, useMocks: e.target.value === "true" }))}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="true">Yes (Mock Data)</option>
-                <option value="false">No (Live Tourplan Sandbox)</option>
+                <option value="false">No (Live API)</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Use AWS Proxy:</label>
+              <select
+                value={config.useProxy.toString()}
+                onChange={(e) => setConfig((prev) => ({ ...prev, useProxy: e.target.value === "true" }))}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="true">Yes (AWS Lambda)</option>
+                <option value="false">No (Direct)</option>
               </select>
             </div>
             <div>
@@ -342,7 +379,7 @@ export default function APITestingDashboard() {
               <input
                 type="number"
                 value={config.timeout}
-                onChange={(e) => setConfig(prev => ({ ...prev, timeout: parseInt(e.target.value) }))}
+                onChange={(e) => setConfig((prev) => ({ ...prev, timeout: Number.parseInt(e.target.value) }))}
                 min="5000"
                 max="60000"
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -359,6 +396,33 @@ export default function APITestingDashboard() {
               API Endpoint Tests
             </h2>
 
+            {/* Proxy Test */}
+            <div className="mb-6 p-4 border-2 border-gray-200 rounded-xl hover:border-blue-500 transition-colors">
+              <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <span className="bg-purple-500 text-white px-3 py-1 rounded-full text-xs font-bold">POST</span>
+                AWS Lambda Proxy Test
+              </h3>
+              <p className="text-gray-600 mb-3">Test the AWS Lambda proxy connection to Tourplan</p>
+              <div className="flex gap-2 mb-3">
+                <button
+                  onClick={testProxy}
+                  className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
+                >
+                  Test Proxy
+                </button>
+              </div>
+              {testResults["api-test-proxy"] && (
+                <div
+                  className={`p-3 rounded-lg text-sm font-mono ${
+                    testResults["api-test-proxy"].success ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                  }`}
+                >
+                  {testResults["api-test-proxy"].success ? "✅" : "❌"} {testResults["api-test-proxy"].message}
+                  {testResults["api-test-proxy"].responseTime && ` (${testResults["api-test-proxy"].responseTime}ms)`}
+                </div>
+              )}
+            </div>
+
             {/* Database Test */}
             <div className="mb-6 p-4 border-2 border-gray-200 rounded-xl hover:border-blue-500 transition-colors">
               <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
@@ -374,12 +438,14 @@ export default function APITestingDashboard() {
                   Test Database
                 </button>
               </div>
-              {testResults['api-test-db'] && (
-                <div className={`p-3 rounded-lg text-sm font-mono ${
-                  testResults['api-test-db'].success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                }`}>
-                  {testResults['api-test-db'].success ? '✅' : '❌'} {testResults['api-test-db'].message}
-                  {testResults['api-test-db'].responseTime && ` (${testResults['api-test-db'].responseTime}ms)`}
+              {testResults["api-test-db"] && (
+                <div
+                  className={`p-3 rounded-lg text-sm font-mono ${
+                    testResults["api-test-db"].success ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                  }`}
+                >
+                  {testResults["api-test-db"].success ? "✅" : "❌"} {testResults["api-test-db"].message}
+                  {testResults["api-test-db"].responseTime && ` (${testResults["api-test-db"].responseTime}ms)`}
                 </div>
               )}
             </div>
@@ -399,37 +465,15 @@ export default function APITestingDashboard() {
                   Search Tours
                 </button>
               </div>
-              {testResults['api-tours-search'] && (
-                <div className={`p-3 rounded-lg text-sm font-mono ${
-                  testResults['api-tours-search'].success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                }`}>
-                  {testResults['api-tours-search'].success ? '✅' : '❌'} {testResults['api-tours-search'].message}
-                  {testResults['api-tours-search'].responseTime && ` (${testResults['api-tours-search'].responseTime}ms)`}
-                </div>
-              )}
-            </div>
-
-            {/* Availability Test */}
-            <div className="mb-6 p-4 border-2 border-gray-200 rounded-xl hover:border-blue-500 transition-colors">
-              <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold">POST</span>
-                Tour Availability
-              </h3>
-              <p className="text-gray-600 mb-3">Check availability for specific tour and date</p>
-              <div className="flex gap-2 mb-3">
-                <button
-                  onClick={() => testAvailability(sampleData.availability)}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
+              {testResults["api-tours-search"] && (
+                <div
+                  className={`p-3 rounded-lg text-sm font-mono ${
+                    testResults["api-tours-search"].success ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                  }`}
                 >
-                  Check Availability
-                </button>
-              </div>
-              {testResults['api-tours-availability'] && (
-                <div className={`p-3 rounded-lg text-sm font-mono ${
-                  testResults['api-tours-availability'].success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                }`}>
-                  {testResults['api-tours-availability'].success ? '✅' : '❌'} {testResults['api-tours-availability'].message}
-                  {testResults['api-tours-availability'].responseTime && ` (${testResults['api-tours-availability'].responseTime}ms)`}
+                  {testResults["api-tours-search"].success ? "✅" : "❌"} {testResults["api-tours-search"].message}
+                  {testResults["api-tours-search"].responseTime &&
+                    ` (${testResults["api-tours-search"].responseTime}ms)`}
                 </div>
               )}
             </div>
@@ -440,8 +484,8 @@ export default function APITestingDashboard() {
                 <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold">POST</span>
                 Tourplan OptionInfo Tests
               </h3>
-              <p className="text-gray-600 mb-3">Test Tourplan HostConnect OptionInfo requests with sandbox API</p>
-              
+              <p className="text-gray-600 mb-3">Test Tourplan HostConnect OptionInfo requests via proxy</p>
+
               {/* Format Tests */}
               <div className="mb-4">
                 <h4 className="font-medium text-gray-600 mb-2">Format Tests:</h4>
@@ -492,12 +536,18 @@ export default function APITestingDashboard() {
                 </div>
               </div>
 
-              {testResults['api-tourplan-option-info'] && (
-                <div className={`p-3 rounded-lg text-sm font-mono ${
-                  testResults['api-tourplan-option-info'].success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                }`}>
-                  {testResults['api-tourplan-option-info'].success ? '✅' : '❌'} {testResults['api-tourplan-option-info'].message}
-                  {testResults['api-tourplan-option-info'].responseTime && ` (${testResults['api-tourplan-option-info'].responseTime}ms)`}
+              {testResults["api-tourplan-option-info"] && (
+                <div
+                  className={`p-3 rounded-lg text-sm font-mono ${
+                    testResults["api-tourplan-option-info"].success
+                      ? "bg-green-100 text-green-800"
+                      : "bg-red-100 text-red-800"
+                  }`}
+                >
+                  {testResults["api-tourplan-option-info"].success ? "✅" : "❌"}{" "}
+                  {testResults["api-tourplan-option-info"].message}
+                  {testResults["api-tourplan-option-info"].responseTime &&
+                    ` (${testResults["api-tourplan-option-info"].responseTime}ms)`}
                 </div>
               )}
             </div>
@@ -524,12 +574,18 @@ export default function APITestingDashboard() {
                   Create Booking
                 </button>
               </div>
-              {testResults['api-bookings-create'] && (
-                <div className={`p-3 rounded-lg text-sm font-mono ${
-                  testResults['api-bookings-create'].success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                }`}>
-                  {testResults['api-bookings-create'].success ? '✅' : '❌'} {testResults['api-bookings-create'].message}
-                  {testResults['api-bookings-create'].responseTime && ` (${testResults['api-bookings-create'].responseTime}ms)`}
+              {testResults["api-bookings-create"] && (
+                <div
+                  className={`p-3 rounded-lg text-sm font-mono ${
+                    testResults["api-bookings-create"].success
+                      ? "bg-green-100 text-green-800"
+                      : "bg-red-100 text-red-800"
+                  }`}
+                >
+                  {testResults["api-bookings-create"].success ? "✅" : "❌"}{" "}
+                  {testResults["api-bookings-create"].message}
+                  {testResults["api-bookings-create"].responseTime &&
+                    ` (${testResults["api-bookings-create"].responseTime}ms)`}
                 </div>
               )}
             </div>
@@ -549,12 +605,18 @@ export default function APITestingDashboard() {
                   Process Payment
                 </button>
               </div>
-              {testResults['api-payments-process'] && (
-                <div className={`p-3 rounded-lg text-sm font-mono ${
-                  testResults['api-payments-process'].success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                }`}>
-                  {testResults['api-payments-process'].success ? '✅' : '❌'} {testResults['api-payments-process'].message}
-                  {testResults['api-payments-process'].responseTime && ` (${testResults['api-payments-process'].responseTime}ms)`}
+              {testResults["api-payments-process"] && (
+                <div
+                  className={`p-3 rounded-lg text-sm font-mono ${
+                    testResults["api-payments-process"].success
+                      ? "bg-green-100 text-green-800"
+                      : "bg-red-100 text-red-800"
+                  }`}
+                >
+                  {testResults["api-payments-process"].success ? "✅" : "❌"}{" "}
+                  {testResults["api-payments-process"].message}
+                  {testResults["api-payments-process"].responseTime &&
+                    ` (${testResults["api-payments-process"].responseTime}ms)`}
                 </div>
               )}
             </div>
@@ -571,9 +633,9 @@ export default function APITestingDashboard() {
                 </button>
                 <button
                   onClick={() => {
+                    testProxy()
                     testDatabase()
                     testTourSearch(sampleData.search)
-                    testAvailability(sampleData.availability)
                     testTourplanOptionInfo(sampleData.tourplanOptionInfo.new)
                   }}
                   className="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
