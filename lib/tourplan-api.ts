@@ -1,5 +1,5 @@
-import { parseStringPromise } from "xml2js"
 import { CacheManager } from "./cache"
+import { env } from "./env"
 
 // Add type safety for the parseStringPromise function
 declare module "xml2js" {
@@ -82,51 +82,31 @@ export interface PaymentStatusUpdate {
   paymentMethod: string
 }
 
-export class TourplanAPI {
-  private config: TourplanConfig
+interface TourplanRequest {
+  xmlBody: string
+  agentId?: string
+}
 
-  constructor(config: TourplanConfig) {
-    this.config = config
+export class TourplanAPI {
+  private baseUrl: string
+  private proxyUrl?: string
+  private useProxy: boolean
+  private agentId: string
+
+  constructor() {
+    this.baseUrl = env.TOURPLAN_API_URL
+    this.proxyUrl = env.TOURPLAN_PROXY_URL
+    this.useProxy = env.USE_TOURPLAN_PROXY
+    this.agentId = env.TOURPLAN_AGENT_ID
   }
 
-  private async makeRequest(xmlBody: string, useSoapEndpoint = false): Promise<any> {
+  async makeRequest(xmlBody: string): Promise<any> {
     try {
-      // Use proxy if configured
-      if (this.config.useProxy && this.config.proxyUrl) {
-        console.log("Using AWS Lambda proxy for Tourplan request")
+      if (this.useProxy && this.proxyUrl) {
         return await this.makeProxyRequest(xmlBody)
+      } else {
+        return await this.makeDirectRequest(xmlBody)
       }
-
-      // Direct request (original method)
-      const url = useSoapEndpoint ? this.config.soapSearchUrl : this.config.baseUrl
-
-      console.log("Making direct request to:", url)
-      console.log("Request body:", xmlBody)
-
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/xml; charset=utf-8",
-          Accept: "application/xml, text/xml",
-          "Cache-Control": "no-cache",
-        },
-        body: xmlBody,
-      })
-
-      console.log("Response status:", response.status)
-      console.log("Response headers:", Object.fromEntries(response.headers.entries()))
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error("HTTP error response:", errorText)
-        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`)
-      }
-
-      const xmlText = await response.text()
-      console.log("Raw XML response:", xmlText)
-
-      const result = await parseStringPromise(xmlText)
-      return result
     } catch (error) {
       console.error("Tourplan API request failed:", error)
       throw error
@@ -134,51 +114,78 @@ export class TourplanAPI {
   }
 
   private async makeProxyRequest(xmlBody: string): Promise<any> {
-    try {
-      console.log("Making request through AWS Lambda proxy:", this.config.proxyUrl)
-      console.log("XML body:", xmlBody)
-
-      const response = await fetch(this.config.proxyUrl!, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          xmlBody: xmlBody,
-          targetUrl: this.config.baseUrl,
-          agentId: this.config.agentId,
-        }),
-      })
-
-      console.log("Proxy response status:", response.status)
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error("Proxy error response:", errorText)
-        throw new Error(`Proxy error! status: ${response.status}, body: ${errorText}`)
-      }
-
-      const proxyResponse = await response.json()
-      console.log("Proxy response:", proxyResponse)
-
-      if (!proxyResponse.success) {
-        throw new Error(`Proxy request failed: ${proxyResponse.error || "Unknown error"}`)
-      }
-
-      // Parse the XML response from Tourplan
-      if (proxyResponse.tourplanResponse && proxyResponse.tourplanResponse.body) {
-        const xmlText = proxyResponse.tourplanResponse.body
-        console.log("Raw XML from proxy:", xmlText)
-
-        const result = await parseStringPromise(xmlText)
-        return result
-      } else {
-        throw new Error("No valid response body from proxy")
-      }
-    } catch (error) {
-      console.error("Proxy request failed:", error)
-      throw error
+    if (!this.proxyUrl) {
+      throw new Error("Proxy URL not configured")
     }
+
+    const response = await fetch(this.proxyUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        xmlBody,
+        targetUrl: this.baseUrl,
+        agentId: this.agentId,
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Proxy request failed: ${response.status} ${response.statusText}`)
+    }
+
+    return await response.text()
+  }
+
+  private async makeDirectRequest(xmlBody: string): Promise<any> {
+    const response = await fetch(this.baseUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/xml",
+        "User-Agent": "TourplanBookingEngine/1.0",
+      },
+      body: xmlBody,
+    })
+
+    if (!response.ok) {
+      throw new Error(`Direct request failed: ${response.status} ${response.statusText}`)
+    }
+
+    return await response.text()
+  }
+
+  // Helper method to create OptionInfo requests
+  createOptionInfoRequest(opt: string, info: string, dateFrom?: string, dateTo?: string, roomConfigs?: any[]): string {
+    let requestBody = `<OptionInfoRequest>
+      <Opt>${opt}</Opt>
+      <Info>${info}</Info>`
+
+    if (dateFrom) {
+      requestBody += `<DateFrom>${dateFrom}</DateFrom>`
+    }
+    if (dateTo) {
+      requestBody += `<DateTo>${dateTo}</DateTo>`
+    }
+    if (roomConfigs && roomConfigs.length > 0) {
+      requestBody += "<RoomConfigs>"
+      roomConfigs.forEach((config) => {
+        requestBody += `<RoomConfig>
+          <Adults>${config.adults}</Adults>
+          <RoomType>${config.roomType}</RoomType>
+        </RoomConfig>`
+      })
+      requestBody += "</RoomConfigs>"
+    }
+
+    requestBody += "</OptionInfoRequest>"
+
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<HostConnectRequest>
+  <AgentID>${this.agentId}</AgentID>
+  <Request>
+    ${requestBody}
+  </Request>
+</HostConnectRequest>`
   }
 
   private buildOptionInfoXML(params: {
@@ -274,8 +281,8 @@ export class TourplanAPI {
 <!DOCTYPE Request SYSTEM "hostConnect_5_05_000.dtd">
 <Request>
   <OptionInfoRequest>
-    <AgentID>${this.config.agentId}</AgentID>
-    <Password>${this.config.password}</Password>
+    <AgentID>${this.agentId}</AgentID>
+    <Password>${env.TOURPLAN_PASSWORD}</Password>
     <ButtonName>Day Tours</ButtonName>
     <DestinationName>${destination}</DestinationName>
     <Info>GS</Info>
@@ -401,15 +408,15 @@ export class TourplanAPI {
     }>
   }): Promise<any> {
     // Check if we have valid Tourplan credentials
-    if (!this.config.baseUrl || !this.config.username || !this.config.password || !this.config.agentId) {
+    if (!this.baseUrl || !env.TOURPLAN_USERNAME || !env.TOURPLAN_PASSWORD || !this.agentId) {
       console.log("Tourplan credentials not configured, returning mock data")
       return this.getMockOptionInfo(params)
     }
 
     try {
       const xmlBody = this.buildOptionInfoXML({
-        agentId: this.config.agentId,
-        password: this.config.password,
+        agentId: this.agentId,
+        password: env.TOURPLAN_PASSWORD,
         buttonName: params.buttonName,
         destinationName: params.destinationName,
         opt: params.opt,
@@ -517,13 +524,13 @@ export class TourplanAPI {
   }): Promise<TourplanTour[]> {
     console.log("searchTours called with params:", params)
     console.log("Tourplan config:", {
-      hasBaseUrl: !!this.config.baseUrl,
-      hasUsername: !!this.config.username,
-      hasPassword: !!this.config.password,
-      hasAgentId: !!this.config.agentId,
-      baseUrl: this.config.baseUrl,
-      useProxy: this.config.useProxy,
-      proxyUrl: this.config.proxyUrl,
+      hasBaseUrl: !!this.baseUrl,
+      hasUsername: !!env.TOURPLAN_USERNAME,
+      hasPassword: !!env.TOURPLAN_PASSWORD,
+      hasAgentId: !!this.agentId,
+      baseUrl: this.baseUrl,
+      useProxy: this.useProxy,
+      proxyUrl: this.proxyUrl,
     })
 
     const cacheKey = CacheManager.getTourCacheKey(
@@ -547,7 +554,7 @@ export class TourplanAPI {
       console.log("Sending Tourplan OptionInfo Search request...")
       console.log("XML Request:", xmlBody)
 
-      const xmlResponse = await this.makeRequest(xmlBody, false)
+      const xmlResponse = await this.makeRequest(xmlBody)
       console.log("Tourplan OptionInfo Search response received")
       console.log("XML Response:", JSON.stringify(xmlResponse, null, 2))
 
@@ -583,7 +590,7 @@ export class TourplanAPI {
         const broaderXml = this.buildSearchXML(broaderParams)
         console.log("Trying broader search with destination only...")
 
-        const broaderResponse = await this.makeRequest(broaderXml, false)
+        const broaderResponse = await this.makeRequest(broaderXml)
         const broaderTours = this.parseTourData(broaderResponse)
 
         if (broaderTours.length > 0) {
@@ -802,21 +809,17 @@ export class TourplanAPI {
   }
 }
 
-let tourplanAPI: TourplanAPI | null = null
+// ---------- Singleton helper ----------
 
+let _tourplanAPI: TourplanAPI | null = null
+
+/**
+ * Return a singleton instance of TourplanAPI.
+ * Keeps backward-compatibility with the rest of the codebase.
+ */
 export function getTourplanAPI(): TourplanAPI {
-  if (!tourplanAPI) {
-    const config: TourplanConfig = {
-      baseUrl: process.env.TOURPLAN_API_URL || "https://pa-thisis.nx.tourplan.net/hostconnect_test/api/hostConnectApi",
-      soapSearchUrl:
-        process.env.TOURPLAN_SOAP_SEARCH_URL || "https://pa-thisis.nx.tourplan.net/hostconnect_test/api/hostConnectApi",
-      username: process.env.TOURPLAN_USERNAME || "SAMAGT",
-      password: process.env.TOURPLAN_PASSWORD || "S@MAgt01",
-      agentId: process.env.TOURPLAN_AGENT_ID || "SAMAGT",
-      proxyUrl: process.env.TOURPLAN_PROXY_URL,
-      useProxy: process.env.USE_TOURPLAN_PROXY === "true",
-    }
-    tourplanAPI = new TourplanAPI(config)
+  if (!_tourplanAPI) {
+    _tourplanAPI = new TourplanAPI()
   }
-  return tourplanAPI
+  return _tourplanAPI
 }

@@ -5,23 +5,20 @@ export async function POST(request: NextRequest) {
     const proxyUrl = process.env.TOURPLAN_PROXY_URL
 
     if (!proxyUrl) {
-      return NextResponse.json({ error: "TOURPLAN_PROXY_URL not configured" }, { status: 500 })
+      return NextResponse.json({ success: false, error: "TOURPLAN_PROXY_URL not configured" }, { status: 500 })
     }
 
-    // Test XML request
-    const testXML = `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE Request SYSTEM "hostConnect_5_05_000.dtd">
-<Request>
-  <OptionInfoRequest>
-    <AgentID>SAMAGT</AgentID>
-    <Password>S@MAgt01</Password>
-    <ButtonName>Day Tours</ButtonName>
-    <DestinationName>Cape Town</DestinationName>
-    <Info>GS</Info>
-  </OptionInfoRequest>
-</Request>`
-
-    console.log("Testing proxy at:", proxyUrl)
+    // Test the proxy with a simple OptionInfo request
+    const testXml = `<?xml version="1.0" encoding="UTF-8"?>
+<HostConnectRequest>
+  <AgentID>${process.env.TOURPLAN_AGENT_ID || "SAMAGT"}</AgentID>
+  <Request>
+    <OptionInfoRequest>
+      <Opt>SAMAGT</Opt>
+      <Info>GS</Info>
+    </OptionInfoRequest>
+  </Request>
+</HostConnectRequest>`
 
     const response = await fetch(proxyUrl, {
       method: "POST",
@@ -29,37 +26,24 @@ export async function POST(request: NextRequest) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        xmlBody: testXML,
+        xmlBody: testXml,
         targetUrl: process.env.TOURPLAN_API_URL,
-        agentId: "SAMAGT",
+        agentId: process.env.TOURPLAN_AGENT_ID,
       }),
     })
 
-    const result = await response.json()
+    const data = await response.text()
 
     return NextResponse.json({
       success: response.ok,
-      proxyUrl,
-      response: result,
-      timestamp: new Date().toISOString(),
+      response: {
+        success: response.ok,
+        status: response.status,
+        data: data.substring(0, 500) + (data.length > 500 ? "..." : ""),
+        error: response.ok ? null : `HTTP ${response.status}`,
+      },
     })
   } catch (error) {
-    console.error("Proxy test failed:", error)
-    return NextResponse.json(
-      {
-        error: "Proxy test failed",
-        message: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 },
-    )
+    return NextResponse.json({ success: false, error: `Proxy test failed: ${error}` }, { status: 500 })
   }
-}
-
-export async function GET() {
-  return NextResponse.json({
-    message: "Proxy test endpoint",
-    description: "POST to test the AWS Lambda proxy connection",
-    proxyUrl: process.env.TOURPLAN_PROXY_URL || "Not configured",
-    useProxy: process.env.USE_TOURPLAN_PROXY || "false",
-  })
 }
