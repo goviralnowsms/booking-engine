@@ -1,6 +1,21 @@
 import { neon } from "@neondatabase/serverless"
 
-const sql = neon(process.env.DATABASE_URL!)
+/**
+ * Get (or create) a Neon SQL client.
+ * Falls back gracefully when no connection string is configured
+ * so that the project can still build & deploy without a database.
+ */
+function getSql() {
+  const url = process.env.NEON_DATABASE_URL || process.env.NEON_DATABASE_URL || process.env.POSTGRES_URL
+
+  if (!url) {
+    throw new Error("Database connection URL not provided – set DATABASE_URL or NEON_DATABASE_URL in your environment.")
+  }
+
+  // Cache the client across calls
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+  return (globalThis as any).__SQL_CLIENT__ || ((globalThis as any).__SQL_CLIENT__ = neon(url))
+}
 
 export interface Customer {
   id: string
@@ -44,7 +59,7 @@ export interface Payment {
 export class DatabaseService {
   // Customer operations
   static async createCustomer(customerData: Omit<Customer, "id" | "created_at" | "updated_at">): Promise<Customer> {
-    const result = await sql`
+    const result = await getSql()`
       INSERT INTO customers (first_name, last_name, email, phone, address)
       VALUES (${customerData.first_name}, ${customerData.last_name}, ${customerData.email}, ${customerData.phone || null}, ${customerData.address || null})
       RETURNING *
@@ -53,14 +68,14 @@ export class DatabaseService {
   }
 
   static async getCustomerByEmail(email: string): Promise<Customer | null> {
-    const result = await sql`
+    const result = await getSql()`
       SELECT * FROM customers WHERE email = ${email} LIMIT 1
     `
     return (result[0] as Customer) || null
   }
 
   static async updateCustomer(id: string, customerData: Partial<Customer>): Promise<Customer> {
-    const result = await sql`
+    const result = await getSql()`
       UPDATE customers 
       SET 
         first_name = COALESCE(${customerData.first_name}, first_name),
@@ -77,7 +92,7 @@ export class DatabaseService {
 
   // Booking operations
   static async createBooking(bookingData: Omit<Booking, "id" | "created_at" | "updated_at">): Promise<Booking> {
-    const result = await sql`
+    const result = await getSql()`
       INSERT INTO bookings (
         booking_reference, tour_id, customer_id, start_date, end_date, 
         adults, children, total_price, deposit_amount, status, tourplan_booking_id
@@ -94,14 +109,14 @@ export class DatabaseService {
   }
 
   static async getBooking(id: string): Promise<Booking | null> {
-    const result = await sql`
+    const result = await getSql()`
       SELECT * FROM bookings WHERE id = ${id} LIMIT 1
     `
     return (result[0] as Booking) || null
   }
 
   static async getBookingWithCustomer(id: string): Promise<(Booking & { customer: Customer }) | null> {
-    const result = await sql`
+    const result = await getSql()`
       SELECT 
         b.*,
         json_build_object(
@@ -121,7 +136,7 @@ export class DatabaseService {
   }
 
   static async updateBookingStatus(id: string, status: Booking["status"]): Promise<Booking> {
-    const result = await sql`
+    const result = await getSql()`
       UPDATE bookings 
       SET status = ${status}, updated_at = NOW()
       WHERE id = ${id}
@@ -131,7 +146,7 @@ export class DatabaseService {
   }
 
   static async getBookingsByCustomer(customerId: string): Promise<Booking[]> {
-    const result = await sql`
+    const result = await getSql()`
       SELECT * FROM bookings 
       WHERE customer_id = ${customerId}
       ORDER BY created_at DESC
@@ -141,7 +156,7 @@ export class DatabaseService {
 
   // Payment operations
   static async createPayment(paymentData: Omit<Payment, "id" | "processed_at">): Promise<Payment> {
-    const result = await sql`
+    const result = await getSql()`
       INSERT INTO payments (
         booking_id, amount, payment_method, payment_provider, 
         provider_transaction_id, status
@@ -156,7 +171,7 @@ export class DatabaseService {
   }
 
   static async getPaymentsByBooking(bookingId: string): Promise<Payment[]> {
-    const result = await sql`
+    const result = await getSql()`
       SELECT * FROM payments 
       WHERE booking_id = ${bookingId}
       ORDER BY processed_at DESC
@@ -165,7 +180,7 @@ export class DatabaseService {
   }
 
   static async updatePaymentStatus(id: string, status: Payment["status"]): Promise<Payment> {
-    const result = await sql`
+    const result = await getSql()`
       UPDATE payments 
       SET status = ${status}
       WHERE id = ${id}
@@ -176,14 +191,14 @@ export class DatabaseService {
 
   // Booking extras
   static async addBookingExtra(bookingId: string, extraId: string, quantity: number, unitPrice: number): Promise<void> {
-    await sql`
+    await getSql()`
       INSERT INTO booking_extras (booking_id, tour_extra_id, quantity, unit_price)
       VALUES (${bookingId}, ${extraId}, ${quantity}, ${unitPrice})
     `
   }
 
   static async getBookingExtras(bookingId: string): Promise<any[]> {
-    const result = await sql`
+    const result = await getSql()`
       SELECT * FROM booking_extras 
       WHERE booking_id = ${bookingId}
     `
