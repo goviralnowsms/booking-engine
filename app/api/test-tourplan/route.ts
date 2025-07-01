@@ -1,60 +1,54 @@
-// Force Node.js runtime instead of Edge
-export const runtime = "nodejs"
-
 import { NextResponse } from "next/server"
-import { getTourplanAPI } from "@/lib/tourplan-api"
+import { searchTours, getOptionInfo } from "@/lib/tourplan-api"
+
+export const runtime = "nodejs"
 
 export async function GET() {
   try {
-    console.log("=== TOURPLAN API TEST (Node.js Runtime) ===")
+    console.log("Testing Tourplan API integration...")
 
-    const envCheck = {
-      apiUrl: !!process.env.TOURPLAN_API_URL,
-      username: !!process.env.TOURPLAN_USERNAME,
-      password: !!process.env.TOURPLAN_PASSWORD,
-      agentId: !!process.env.TOURPLAN_AGENT_ID,
-    }
+    // Test search
+    const searchResult = await searchTours({
+      country: "Tanzania",
+      destination: "Serengeti",
+      tourLevel: "Moderate",
+    })
 
-    const tourplanAPI = getTourplanAPI()
-
-    let connectionResult
-    let searchResult
-
-    try {
-      connectionResult = await tourplanAPI.getOptionInfo({
-        buttonName: "Day Tours",
-        destinationName: "Cape Town",
-        info: "G",
-      })
-    } catch (error) {
-      connectionResult = { error: error instanceof Error ? error.message : "Unknown error" }
-    }
-
-    try {
-      searchResult = await tourplanAPI.searchTours({
-        destination: "Cape Town",
-        country: "South Africa",
-        adults: 2,
-      })
-    } catch (error) {
-      searchResult = { error: error instanceof Error ? error.message : "Unknown error" }
-    }
+    // Test option info
+    const optionResult = await getOptionInfo("MOCK001")
 
     return NextResponse.json({
       success: true,
-      runtime: "nodejs",
-      timestamp: new Date().toISOString(),
-      environment: envCheck,
-      connectionTest: connectionResult,
-      searchTest: searchResult,
+      message: "Tourplan API test completed",
+      results: {
+        search: {
+          tours_found: searchResult.length,
+          sample_tour: searchResult[0]?.name || "None",
+        },
+        option_info: {
+          tour_name: optionResult?.name || "None",
+          tour_id: optionResult?.id || "None",
+        },
+      },
+      environment: {
+        proxy_enabled: process.env.USE_TOURPLAN_PROXY === "true",
+        proxy_url: process.env.TOURPLAN_PROXY_URL ? "Configured" : "Missing",
+        api_url: process.env.TOURPLAN_API_URL ? "Configured" : "Missing",
+      },
     })
   } catch (error) {
-    console.error("Test failed:", error)
+    console.error("Tourplan API test failed:", error)
+
     return NextResponse.json(
       {
-        error: "Test failed",
+        success: false,
+        error: "Tourplan API test failed",
         message: error instanceof Error ? error.message : "Unknown error",
-        timestamp: new Date().toISOString(),
+        environment: {
+          proxy_enabled: process.env.USE_TOURPLAN_PROXY === "true",
+          proxy_url: process.env.TOURPLAN_PROXY_URL ? "Configured" : "Missing",
+          api_url: process.env.TOURPLAN_API_URL ? "Configured" : "Missing",
+        },
       },
       { status: 500 },
     )

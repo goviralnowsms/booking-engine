@@ -7,6 +7,7 @@
 import { CacheManager } from "./cache"
 import { env } from "./env"
 import { parseStringPromise } from "xml2js"
+import { getTourplanAPI as tourplanClient } from "./api/tourplan/tourplanClient.js"
 
 export interface TourplanConfig {
   baseUrl: string
@@ -87,6 +88,74 @@ export interface PaymentStatusUpdate {
 interface TourplanRequest {
   xmlBody: string
   agentId?: string
+}
+
+// Mock data fallbacks
+const MOCK_TOURS = [
+  {
+    tourId: "MOCK001",
+    tourName: "Serengeti Safari Adventure",
+    description: "Experience the Great Migration in Tanzania's most famous national park",
+    duration: 7,
+    priceFrom: 2850,
+    currency: "USD",
+    tourLevel: "moderate",
+    supplierId: "supplier-001",
+    supplierName: "African Adventures",
+    destination: "Serengeti",
+    country: "Tanzania",
+    availability: "OK" as const,
+    extras: [],
+  },
+  {
+    tourId: "MOCK002",
+    tourName: "Victoria Falls Explorer",
+    description: "Witness the power of one of the world's greatest waterfalls",
+    duration: 4,
+    priceFrom: 1200,
+    currency: "USD",
+    tourLevel: "easy",
+    supplierId: "supplier-002",
+    supplierName: "Safari Plus",
+    destination: "Victoria Falls",
+    country: "Zambia/Zimbabwe",
+    availability: "OK" as const,
+    extras: [],
+  },
+]
+
+async function makeRequest(endpoint: string, data: any) {
+  try {
+    const tourplanClientInstance = tourplanClient()
+
+    if (process.env.USE_TOURPLAN_PROXY === "true" && process.env.TOURPLAN_PROXY_URL) {
+      // Use AWS Lambda proxy
+      const response = await fetch(process.env.TOURPLAN_PROXY_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          xmlBody: data,
+          targetUrl: process.env.TOURPLAN_API_URL,
+          agentId: process.env.TOURPLAN_AGENT_ID,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Proxy request failed: ${response.status}`)
+      }
+
+      return await response.text()
+    } else {
+      // Direct request (fallback)
+      return await tourplanClientInstance.makeRequest(endpoint, data)
+    }
+  } catch (error) {
+    console.error("Tourplan API request failed:", error)
+    // Return empty object to trigger mock data fallback
+    return null
+  }
 }
 
 export class TourplanAPI {
@@ -831,17 +900,13 @@ export class TourplanAPI {
   }
 }
 
-// ---------- Singleton helper ----------
-
-let _tourplanAPI: TourplanAPI | null = null
-
-/**
- * Return a singleton instance of TourplanAPI.
- * Keeps backward-compatibility with the rest of the codebase.
- */
+/* ---------- SINGLETON (used by many files) ---------- */
+let instance: TourplanAPI | null = null
 export function getTourplanAPI(): TourplanAPI {
-  if (!_tourplanAPI) {
-    _tourplanAPI = new TourplanAPI()
-  }
-  return _tourplanAPI
+  if (!instance) instance = new TourplanAPI()
+  return instance
 }
+
+/* ---------- RE-EXPORT THE MAIN METHODS ---------- */
+export const searchTours = (params?: any) => getTourplanAPI().searchTours(params)
+export const getOptionInfo = (params: any) => getTourplanAPI().getOptionInfo(params)

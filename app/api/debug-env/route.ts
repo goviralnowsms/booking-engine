@@ -1,82 +1,40 @@
 import { NextResponse } from "next/server"
-import { env } from "@/lib/env"
+
+export const runtime = "nodejs"
 
 export async function GET() {
-  try {
-    const envStatus = {
-      // Core configuration
-      tourplan: {
-        configured: env.isConfigured(),
-        hasApiUrl: !!env.TOURPLAN_API_URL,
-        hasUsername: !!env.TOURPLAN_USERNAME,
-        hasPassword: !!env.TOURPLAN_PASSWORD,
-        hasAgentId: !!env.TOURPLAN_AGENT_ID,
-        hasProxy: !!env.TOURPLAN_PROXY_URL,
-        useProxy: env.USE_TOURPLAN_PROXY,
-      },
+  const envStatus = {
+    // Tourplan API
+    tourplan_api_url: process.env.TOURPLAN_API_URL ? "✅ Set" : "❌ Missing",
+    tourplan_username: process.env.TOURPLAN_USERNAME ? "✅ Set" : "❌ Missing",
+    tourplan_password: process.env.TOURPLAN_PASSWORD ? "✅ Set" : "❌ Missing",
+    tourplan_agent_id: process.env.TOURPLAN_AGENT_ID ? "✅ Set" : "❌ Missing",
+    tourplan_proxy_url: process.env.TOURPLAN_PROXY_URL ? "✅ Set" : "❌ Missing",
+    use_tourplan_proxy: process.env.USE_TOURPLAN_PROXY ? "✅ Set" : "❌ Missing",
 
-      // App URLs
-      urls: {
-        appUrl: env.getAppUrl(),
-        hasAppUrl: !!env.APP_URL,
-        hasPublicAppUrl: !!env.NEXT_PUBLIC_APP_URL,
-      },
+    // App URLs
+    app_url: process.env.APP_URL ? "✅ Set" : "❌ Missing",
+    next_public_app_url: process.env.NEXT_PUBLIC_APP_URL ? "✅ Set" : "❌ Missing",
 
-      // Database - Check for NEON_POSTGRES_URL specifically
-      database: {
-        configured: env.isDatabaseConfigured(),
-        hasNeonPostgresUrl: !!process.env.NEON_POSTGRES_URL,
-        hasDatabaseUrl: !!process.env.NEON_DATABASE_URL,
-        hasSupabaseUrl: !!env.SUPABASE_URL,
-        hasSupabaseKey: !!env.SUPABASE_ANON_KEY,
-        actualDatabaseUrl: !!env.DATABASE_URL,
-      },
+    // Database
+    neon_postgres_url: process.env.NEON_POSTGRES_URL ? "✅ Set" : "❌ Missing",
+    database_url: process.env.NEON_DATABASE_URL ? "✅ Set" : "❌ Missing",
 
-      // Email
-      email: {
-        configured: env.isEmailConfigured(),
-        hasResend: !!env.RESEND_API_KEY,
-        hasSmtp: !!(env.EMAIL_HOST && env.EMAIL_USER),
-        emailFrom: env.EMAIL_FROM || "Not set",
-      },
+    // Email
+    resend_api_key: process.env.RESEND_API_KEY ? "✅ Set" : "❌ Missing",
 
-      // Payments
-      stripe: {
-        configured: env.isStripeConfigured(),
-        hasSecretKey: !!env.STRIPE_SECRET_KEY,
-        hasPublishableKey: !!env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
-      },
+    // Stripe
+    stripe_secret_key: process.env.STRIPE_SECRET_KEY ? "✅ Set" : "❌ Missing",
+    next_public_stripe_publishable_key: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ? "✅ Set" : "❌ Missing",
 
-      // Cache
-      cache: {
-        configured: env.isCacheConfigured(),
-        hasKvUrl: !!env.KV_REST_API_URL,
-        hasKvToken: !!env.KV_REST_API_TOKEN,
-      },
-
-      // Missing variables
-      missing: env.getMissingVariables(),
-
-      // Overall status
-      ready: env.isConfigured() && env.isDatabaseConfigured() && !!env.NEXT_PUBLIC_APP_URL,
-
-      // Debug info
-      debug: {
-        neonPostgresUrl: process.env.NEON_POSTGRES_URL ? "Set" : "Not set",
-        databaseUrl: process.env.DATABASE_URL ? "Set" : "Not set",
-        resolvedDatabaseUrl: env.DATABASE_URL ? "Resolved" : "Not resolved",
-      },
-    }
-
-    return NextResponse.json(envStatus, { status: 200 })
-  } catch (error) {
-    console.error("Environment debug error:", error)
-    return NextResponse.json(
-      {
-        error: "Failed to check environment variables",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 },
-    )
+    // Supabase
+    supabase_url: process.env.SUPABASE_URL ? "✅ Set" : "❌ Missing",
+    supabase_anon_key: process.env.SUPABASE_ANON_KEY ? "✅ Set" : "❌ Missing",
   }
+
+  return NextResponse.json({
+    message: "Environment Variables Status",
+    environment: envStatus,
+    timestamp: new Date().toISOString(),
+  })
 }
