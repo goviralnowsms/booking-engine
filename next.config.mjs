@@ -9,7 +9,10 @@
 const nextConfig = {
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },
-  images: { unoptimized: true },
+  images: { 
+    unoptimized: true,
+    domains: ['placeholder.com', 'via.placeholder.com']
+  },
   experimental: { serverComponentsExternalPackages: ['xml2js'] },
   webpack(config, { isServer }) {
     // Only add fallbacks for client bundles
@@ -24,6 +27,10 @@ const nextConfig = {
     }
     return config
   },
+  // Ensure proper routing
+  trailingSlash: false,
+  // Add output configuration for Vercel
+  output: 'standalone'
 }
 
 export default nextConfig

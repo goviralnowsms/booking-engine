@@ -1,3 +1,6 @@
+import { NextResponse } from "next/server"
+import { createClient } from "@supabase/supabase-js"
+
 export async function GET() {
   try {
     console.log("=== Database Test Starting ===")
@@ -15,7 +18,7 @@ export async function GET() {
     })
 
     if (!supabaseUrl || !supabaseKey) {
-      return Response.json({
+      return NextResponse.json({
         success: false,
         status: "❌ Supabase environment variables not found",
         details: {
@@ -28,31 +31,12 @@ export async function GET() {
 
     // Validate URL format
     if (!supabaseUrl.startsWith("https://") || !supabaseUrl.includes(".supabase.co")) {
-      return Response.json({
+      return NextResponse.json({
         success: false,
         status: "❌ Invalid Supabase URL format",
         details: {
           url: supabaseUrl.substring(0, 30) + "...",
           expected: "https://your-project.supabase.co",
-        },
-      })
-    }
-
-    // Try to import Supabase with better error handling
-    let createClient
-    try {
-      console.log("Importing Supabase client...")
-      const supabaseModule = await import("@supabase/supabase-js")
-      createClient = supabaseModule.createClient
-      console.log("Supabase import successful")
-    } catch (importError) {
-      console.error("Supabase import failed:", importError)
-      return Response.json({
-        success: false,
-        status: "❌ Supabase package not available",
-        details: {
-          error: importError instanceof Error ? importError.message : "Import failed",
-          suggestion: "Check if @supabase/supabase-js is installed",
         },
       })
     }
@@ -83,7 +67,7 @@ export async function GET() {
 
       // If it's a table not found error, that's actually good - connection works
       if (error.code === "42P01") {
-        return Response.json({
+        return NextResponse.json({
           success: true,
           status: "✅ Database Connected - Tables Need Setup",
           details: {
@@ -94,7 +78,7 @@ export async function GET() {
         })
       }
 
-      return Response.json({
+      return NextResponse.json({
         success: false,
         status: `❌ Database Error: ${error.message}`,
         details: {
@@ -107,7 +91,7 @@ export async function GET() {
     }
 
     console.log("Database test successful!")
-    return Response.json({
+    return NextResponse.json({
       success: true,
       status: "✅ Database Connected Successfully",
       details: {
@@ -135,20 +119,13 @@ export async function GET() {
       }
     }
 
-    return Response.json({
-      success: false,
-      status: `❌ Connection Error: ${errorMessage}`,
-      details: {
-        error: errorMessage,
-        suggestion,
-        timestamp: new Date().toISOString(),
-        troubleshooting: [
-          "1. Check if Supabase project is active (not paused)",
-          "2. Verify Supabase integration in Vercel dashboard",
-          "3. Check Supabase project billing status",
-          "4. Try redeploying the application",
-        ],
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Database connection failed",
+        message: errorMessage,
       },
-    })
+      { status: 500 },
+    )
   }
 }
