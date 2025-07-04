@@ -49,14 +49,14 @@ export default function SearchBar({
 
   return (
     <div className={`flex flex-col md:flex-row gap-0 ${className}`}>
-      <div className="bg-orange-500 text-white px-4 py-3 font-semibold min-h-[48px] flex items-center">
+      <div className="bg-orange-500 text-white px-4 font-semibold h-12 flex items-center justify-center text-sm">
         Starting country
       </div>
       <Select
         value={searchParams.startingCountry}
         onValueChange={(value) => setSearchParams((prev) => ({ ...prev, startingCountry: value }))}
       >
-        <SelectTrigger className="bg-white border-0 rounded-none px-4 py-3 min-w-[200px] h-[48px]">
+        <SelectTrigger className="bg-white border-0 rounded-none px-4 min-w-[200px] h-12 text-sm">
           <SelectValue placeholder="Botswana" />
         </SelectTrigger>
         <SelectContent>
@@ -69,14 +69,14 @@ export default function SearchBar({
         </SelectContent>
       </Select>
 
-      <div className="bg-orange-500 text-white px-4 py-3 font-semibold min-h-[48px] flex items-center">
+      <div className="bg-orange-500 text-white px-4 font-semibold h-12 flex items-center justify-center text-sm">
         Starting destination
       </div>
       <Select
         value={searchParams.destination}
         onValueChange={(value) => setSearchParams((prev) => ({ ...prev, destination: value }))}
       >
-        <SelectTrigger className="bg-white border-0 rounded-none px-4 py-3 min-w-[200px] h-[48px]">
+        <SelectTrigger className="bg-white border-0 rounded-none px-4 min-w-[200px] h-12 text-sm">
           <SelectValue placeholder="(Select option)" />
         </SelectTrigger>
         <SelectContent>
@@ -88,12 +88,14 @@ export default function SearchBar({
         </SelectContent>
       </Select>
 
-      <div className="bg-orange-500 text-white px-4 py-3 font-semibold min-h-[48px] flex items-center">Class</div>
+      <div className="bg-orange-500 text-white px-4 font-semibold h-12 flex items-center justify-center text-sm">
+        Class
+      </div>
       <Select
         value={searchParams.class}
         onValueChange={(value) => setSearchParams((prev) => ({ ...prev, class: value }))}
       >
-        <SelectTrigger className="bg-white border-0 rounded-none px-4 py-3 min-w-[200px] h-[48px]">
+        <SelectTrigger className="bg-white border-0 rounded-none px-4 min-w-[200px] h-12 text-sm">
           <SelectValue placeholder="(Select option)" />
         </SelectTrigger>
         <SelectContent>
@@ -105,7 +107,7 @@ export default function SearchBar({
 
       <Button
         onClick={handleSearch}
-        className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-none font-semibold h-[48px] flex items-center justify-center"
+        className="bg-orange-500 hover:bg-orange-600 text-white px-8 rounded-none font-semibold h-12 flex items-center justify-center text-sm"
       >
         Search
       </Button>
