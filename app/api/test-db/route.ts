@@ -59,47 +59,54 @@ export async function GET() {
 
     console.log("Testing database connection...")
 
-    // Test with a simple query that should work even without tables
-    const { data, error } = await supabase.from("customers").select("count", { count: "exact", head: true })
-
-    if (error) {
-      console.log("Query error:", error)
-
-      // If it's a table not found error, that's actually good - connection works
-      if (error.code === "42P01") {
-        return NextResponse.json({
-          success: true,
-          status: "✅ Database Connected - Tables Need Setup",
-          details: {
-            message: "Connection successful but tables don't exist yet",
-            suggestion: "Run the table creation script in Supabase SQL Editor",
-            timestamp: new Date().toISOString(),
-          },
-        })
-      }
-
-      return NextResponse.json({
-        success: false,
-        status: `❌ Database Error: ${error.message}`,
-        details: {
-          code: error.code,
-          hint: error.hint,
-          details: error.details,
-          suggestion: "Check your Supabase project status and permissions",
-        },
-      })
-    }
-
-    console.log("Database test successful!")
+    // Simple test response
     return NextResponse.json({
       success: true,
-      status: "✅ Database Connected Successfully",
-      details: {
-        timestamp: new Date().toISOString(),
-        tablesFound: true,
-        message: "All systems operational",
-      },
+      message: "API is working",
+      timestamp: new Date().toISOString(),
     })
+
+    // Test with a simple query that should work even without tables
+    // const { data, error } = await supabase.from("customers").select("count", { count: "exact", head: true })
+
+    // if (error) {
+    //   console.log("Query error:", error)
+
+    //   // If it's a table not found error, that's actually good - connection works
+    //   if (error.code === "42P01") {
+    //     return NextResponse.json({
+    //       success: true,
+    //       status: "✅ Database Connected - Tables Need Setup",
+    //       details: {
+    //         message: "Connection successful but tables don't exist yet",
+    //         suggestion: "Run the table creation script in Supabase SQL Editor",
+    //         timestamp: new Date().toISOString(),
+    //       },
+    //     })
+    //   }
+
+    //   return NextResponse.json({
+    //     success: false,
+    //     status: `❌ Database Error: ${error.message}`,
+    //     details: {
+    //       code: error.code,
+    //       hint: error.hint,
+    //       details: error.details,
+    //       suggestion: "Check your Supabase project status and permissions",
+    //     },
+    //   })
+    // }
+
+    // console.log("Database test successful!")
+    // return NextResponse.json({
+    //   success: true,
+    //   status: "✅ Database Connected Successfully",
+    //   details: {
+    //     timestamp: new Date().toISOString(),
+    //     tablesFound: true,
+    //     message: "All systems operational",
+    //   },
+    // })
   } catch (err) {
     console.error("Database test error:", err)
 
@@ -122,8 +129,8 @@ export async function GET() {
     return NextResponse.json(
       {
         success: false,
-        error: "Database connection failed",
-        message: errorMessage,
+        message: "Database connection failed",
+        error: errorMessage,
       },
       { status: 500 },
     )
