@@ -1,176 +1,89 @@
-"use client"
-
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { MapPin, Clock } from "lucide-react"
-import type { Tour } from "@/app/page"
+import { Button } from "@/components/ui/button"
+import { MapPin, Clock, Star } from "lucide-react"
 
-interface FeaturedToursProps {
-  onTourSelect: (tour: Tour) => void
-}
-
-const featuredTours: Tour[] = [
+const featuredTours = [
   {
-    id: "safari-kruger",
-    name: "Kruger National Park Safari",
-    description:
-      "Experience the Big Five in South Africa's premier game reserve. This 3-day safari includes game drives, luxury accommodation, and expert guides.",
-    duration: 3,
-    price: 1250,
-    level: "standard",
-    availability: "OK",
-    supplier: "African Safari Co",
-    location: "South Africa",
-    extras: [
-      { id: "meals", name: "All Meals", description: "Breakfast, lunch and dinner", price: 150, isCompulsory: true },
-      { id: "transfers", name: "Airport Transfers", description: "Return transfers", price: 80, isCompulsory: false },
-    ],
-  },
-  {
-    id: "serengeti-migration",
-    name: "Great Migration Safari",
-    description:
-      "Witness the spectacular wildebeest migration in Tanzania's Serengeti. 5-day adventure with camping and lodge options.",
-    duration: 5,
-    price: 2100,
-    level: "luxury",
-    availability: "OK",
-    supplier: "Tanzania Adventures",
+    id: 1,
+    title: "Serengeti Safari Adventure",
     location: "Tanzania",
-    extras: [
-      {
-        id: "balloon",
-        name: "Hot Air Balloon",
-        description: "Sunrise balloon safari",
-        price: 450,
-        isCompulsory: false,
-      },
-      {
-        id: "cultural",
-        name: "Maasai Village Visit",
-        description: "Cultural experience",
-        price: 75,
-        isCompulsory: false,
-      },
-    ],
+    duration: "7 days",
+    price: "$2,499",
+    rating: 4.9,
+    image: "/placeholder.svg?height=300&width=400&text=Serengeti+Safari",
+    description: "Experience the Great Migration and witness millions of wildebeest crossing the plains.",
+    highlights: ["Big Five", "Great Migration", "Luxury Camps"],
   },
   {
-    id: "cape-town-wine",
-    name: "Cape Town & Winelands",
-    description:
-      "Explore Cape Town's highlights and the famous wine regions. Includes Table Mountain, wine tastings, and coastal drives.",
-    duration: 4,
-    price: 950,
-    level: "standard",
-    availability: "OK",
-    supplier: "Cape Tours",
+    id: 2,
+    title: "Cape Town & Wine Country",
     location: "South Africa",
-    extras: [
-      {
-        id: "wine-tasting",
-        name: "Premium Wine Tasting",
-        description: "Visit 3 premium wineries",
-        price: 120,
-        isCompulsory: false,
-      },
-      {
-        id: "helicopter",
-        name: "Helicopter Tour",
-        description: "Scenic helicopter flight",
-        price: 280,
-        isCompulsory: false,
-      },
-    ],
+    duration: "5 days",
+    price: "$1,899",
+    rating: 4.8,
+    image: "/placeholder.svg?height=300&width=400&text=Cape+Town",
+    description: "Explore the Mother City and taste world-class wines in the beautiful Cape Winelands.",
+    highlights: ["Table Mountain", "Wine Tasting", "Penguin Colony"],
   },
   {
-    id: "victoria-falls",
-    name: "Victoria Falls Adventure",
-    description:
-      "Experience the mighty Victoria Falls from both Zimbabwe and Zambia sides. Includes adventure activities and sunset cruise.",
-    duration: 2,
-    price: 680,
-    level: "basic",
-    availability: "OK",
-    supplier: "Falls Adventures",
-    location: "Zimbabwe",
-    extras: [
-      {
-        id: "bungee",
-        name: "Bungee Jump",
-        description: "Victoria Falls bridge bungee",
-        price: 160,
-        isCompulsory: false,
-      },
-      {
-        id: "helicopter-falls",
-        name: "Helicopter Flight",
-        description: "Flight of Angels",
-        price: 180,
-        isCompulsory: false,
-      },
-    ],
+    id: 3,
+    title: "Maasai Mara Game Drive",
+    location: "Kenya",
+    duration: "4 days",
+    price: "$1,599",
+    rating: 4.9,
+    image: "/placeholder.svg?height=300&width=400&text=Maasai+Mara",
+    description: "Discover the incredible wildlife of Kenya's most famous game reserve.",
+    highlights: ["Lions", "Elephants", "Cultural Visit"],
   },
 ]
 
-export function FeaturedTours({ onTourSelect }: FeaturedToursProps) {
-  const getLevelColor = (level: string) => {
-    switch (level) {
-      case "basic":
-        return "bg-blue-100 text-blue-800"
-      case "standard":
-        return "bg-green-100 text-green-800"
-      case "luxury":
-        return "bg-purple-100 text-purple-800"
-      default:
-        return "bg-gray-100 text-gray-800"
-    }
-  }
-
+export function FeaturedTours() {
   return (
-    <div className="mt-16">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-4">Featured African Tours</h2>
-        <p className="text-lg text-gray-600">Handpicked experiences showcasing the best of Africa</p>
-      </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {featuredTours.map((tour) => (
+        <Card key={tour.id} className="overflow-hidden hover:shadow-lg transition-shadow border-orange-100">
+          <div className="relative">
+            <img src={tour.image || "/placeholder.svg"} alt={tour.title} className="w-full h-48 object-cover" />
+            <Badge className="absolute top-4 left-4 bg-orange-500 text-white">Featured</Badge>
+          </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-        {featuredTours.map((tour) => (
-          <Card key={tour.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="flex justify-between items-start mb-2">
-                <CardTitle className="text-xl">{tour.name}</CardTitle>
-                <Badge className={getLevelColor(tour.level)} variant="secondary">
-                  {tour.level}
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center text-sm text-gray-600">
+                <MapPin className="h-4 w-4 mr-1 text-orange-500" />
+                {tour.location}
+              </div>
+              <div className="flex items-center text-sm text-gray-600">
+                <Star className="h-4 w-4 mr-1 text-yellow-500 fill-current" />
+                {tour.rating}
+              </div>
+            </div>
+
+            <h3 className="text-xl font-semibold mb-2 text-gray-900">{tour.title}</h3>
+            <p className="text-gray-600 mb-4 text-sm">{tour.description}</p>
+
+            <div className="flex flex-wrap gap-2 mb-4">
+              {tour.highlights.map((highlight, index) => (
+                <Badge key={index} variant="secondary" className="text-xs">
+                  {highlight}
                 </Badge>
-              </div>
-              <div className="flex items-center text-sm text-gray-600 space-x-4">
-                <div className="flex items-center">
-                  <MapPin className="w-4 h-4 mr-1" />
-                  {tour.location}
-                </div>
-                <div className="flex items-center">
-                  <Clock className="w-4 h-4 mr-1" />
-                  {tour.duration} days
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <CardDescription className="text-gray-700 mb-4">{tour.description}</CardDescription>
+              ))}
+            </div>
 
-              <div className="flex justify-between items-center">
-                <div className="text-2xl font-bold text-orange-600">
-                  ${tour.price}
-                  <span className="text-sm font-normal text-gray-500"> per person</span>
-                </div>
-                <Button onClick={() => onTourSelect(tour)} className="bg-orange-500 hover:bg-orange-600">
-                  View Details
-                </Button>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center text-sm text-gray-600">
+                <Clock className="h-4 w-4 mr-1 text-orange-500" />
+                {tour.duration}
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              <div className="text-2xl font-bold text-orange-500">{tour.price}</div>
+            </div>
+
+            <Button className="w-full mt-4 bg-orange-500 hover:bg-orange-600 text-white">View Details</Button>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   )
 }

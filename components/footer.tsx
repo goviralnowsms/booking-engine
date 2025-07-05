@@ -1,109 +1,77 @@
-import Link from "next/link"
-import { Phone, Mail, MapPin, Facebook, Instagram, Twitter } from "lucide-react"
-
 export function Footer() {
   return (
-    <footer className="bg-gray-900 text-white">
-      <div className="container mx-auto px-4 py-12">
+    <footer className="bg-gray-900 text-white py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Company Info */}
           <div>
             <h3 className="text-xl font-bold text-orange-500 mb-4">This is Africa</h3>
-            <p className="text-gray-300 mb-4">
-              Discover the magic of Africa with our authentic tours and unforgettable experiences.
-            </p>
-            <div className="flex space-x-4">
-              <Facebook className="w-5 h-5 text-gray-400 hover:text-orange-500 cursor-pointer" />
-              <Instagram className="w-5 h-5 text-gray-400 hover:text-orange-500 cursor-pointer" />
-              <Twitter className="w-5 h-5 text-gray-400 hover:text-orange-500 cursor-pointer" />
-            </div>
+            <p className="text-gray-300">Your gateway to authentic African experiences and unforgettable adventures.</p>
           </div>
 
-          {/* Quick Links */}
           <div>
-            <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
-            <ul className="space-y-2">
+            <h4 className="font-semibold mb-4">Quick Links</h4>
+            <ul className="space-y-2 text-gray-300">
               <li>
-                <Link href="/tours" className="text-gray-300 hover:text-orange-500">
+                <a href="/" className="hover:text-orange-500 transition-colors">
+                  Home
+                </a>
+              </li>
+              <li>
+                <a href="/tours" className="hover:text-orange-500 transition-colors">
                   Tours
-                </Link>
+                </a>
               </li>
               <li>
-                <Link href="/destinations" className="text-gray-300 hover:text-orange-500">
-                  Destinations
-                </Link>
+                <a href="/about" className="hover:text-orange-500 transition-colors">
+                  About
+                </a>
               </li>
               <li>
-                <Link href="/about" className="text-gray-300 hover:text-orange-500">
-                  About Us
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="text-gray-300 hover:text-orange-500">
+                <a href="/contact" className="hover:text-orange-500 transition-colors">
                   Contact
-                </Link>
+                </a>
               </li>
             </ul>
           </div>
 
-          {/* Destinations */}
           <div>
-            <h4 className="text-lg font-semibold mb-4">Popular Destinations</h4>
-            <ul className="space-y-2">
+            <h4 className="font-semibold mb-4">Destinations</h4>
+            <ul className="space-y-2 text-gray-300">
               <li>
-                <Link href="/destinations/south-africa" className="text-gray-300 hover:text-orange-500">
-                  South Africa
-                </Link>
-              </li>
-              <li>
-                <Link href="/destinations/kenya" className="text-gray-300 hover:text-orange-500">
+                <a href="#" className="hover:text-orange-500 transition-colors">
                   Kenya
-                </Link>
+                </a>
               </li>
               <li>
-                <Link href="/destinations/tanzania" className="text-gray-300 hover:text-orange-500">
+                <a href="#" className="hover:text-orange-500 transition-colors">
                   Tanzania
-                </Link>
+                </a>
               </li>
               <li>
-                <Link href="/destinations/botswana" className="text-gray-300 hover:text-orange-500">
+                <a href="#" className="hover:text-orange-500 transition-colors">
+                  South Africa
+                </a>
+              </li>
+              <li>
+                <a href="#" className="hover:text-orange-500 transition-colors">
                   Botswana
-                </Link>
+                </a>
               </li>
             </ul>
           </div>
 
-          {/* Contact Info */}
           <div>
-            <h4 className="text-lg font-semibold mb-4">Contact Us</h4>
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <Phone className="w-4 h-4 text-orange-500" />
-                <span className="text-gray-300">+61 2 9555 6441</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Mail className="w-4 h-4 text-orange-500" />
-                <span className="text-gray-300">info@thisisafrica.com.au</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <MapPin className="w-4 h-4 text-orange-500" />
-                <span className="text-gray-300">Sydney, Australia</span>
-              </div>
+            <h4 className="font-semibold mb-4">Contact Info</h4>
+            <div className="text-gray-300 space-y-2">
+              <p>Email: info@thisisafrica.com</p>
+              <p>Phone: +1 (555) 123-4567</p>
+              <p>Address: 123 Safari Street, Adventure City</p>
             </div>
           </div>
         </div>
 
-        <div className="border-t border-gray-800 mt-8 pt-8 text-center">
-          <p className="text-gray-400">
-            © 2024 This is Africa. All rights reserved. |
-            <Link href="/privacy" className="hover:text-orange-500 ml-1">
-              Privacy Policy
-            </Link>{" "}
-            |
-            <Link href="/terms" className="hover:text-orange-500 ml-1">
-              Terms of Service
-            </Link>
-          </p>
+        <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+          <p>&copy; 2024 This is Africa. All rights reserved.</p>
         </div>
       </div>
     </footer>
